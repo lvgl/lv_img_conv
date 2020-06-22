@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "canvas": "^2.6.1",
+    "image-q": "^2.1.2",
     "locutus": "^2.0.11",
     "rgbquant": "^1.1.2",
     "yargs": "^15.3.1"

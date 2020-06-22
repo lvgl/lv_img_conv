@@ -5,6 +5,7 @@ import round from 'locutus/php/math/round';
 import dechex from 'locutus/php/math/dechex';
 import str_pad from 'locutus/php/strings/str_pad';
 import count from 'locutus/php/array/count';
+import { buildPalette, utils, applyPalette, distance, image } from 'image-q';
 
 class Converter {
     dith = false;      /*Dithering enable/disable*/
@@ -55,8 +56,7 @@ class Converter {
         this.alpha = alpha;
     }
 
-    convert() {
-        this.d_out = [];
+    async convert() {
 
         var palette_size = 0;
         if(this.cf == ImageMode.CF_INDEXED_1_BIT) palette_size = 2;
@@ -65,22 +65,20 @@ class Converter {
         if(this.cf == ImageMode.CF_INDEXED_8_BIT) palette_size = 256;
 
         if(palette_size) {
-            throw new Error("Images with a palette are not supported yet.");
-        }
+            throw new Error("Palette images are unsupported")
+        } else {
+            this.d_out = [];
 
-        /*Convert all the pixels*/
-        for(var y = 0; y < this.h; y++) {
-            this.dith_reset();
-
-            for(var x = 0; x < this.w; ++x){
-                this.conv_px(x, y);
+            /*Convert all the pixels*/
+            for(var y = 0; y < this.h; y++) {
+                this.dith_reset();
+    
+                for(var x = 0; x < this.w; ++x){
+                    this.conv_px(x, y);
+                }
             }
         }
 
-        /*Revert the original image if it was converted to indexed*/
-        if(palette_size) {
-        //    imagecopy (this.img, img_tmp,  0 , 0 , 0 , 0 , this.w , this.h);
-        }
         return this.format_to_c_array();
     }
 
@@ -367,7 +365,7 @@ const lv_img_dsc_t ${out_name} = {
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', 'STR_PAD_LEFT') + ", ";
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', 'STR_PAD_LEFT') + ", ";
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "\t/*Color of index p*/\n";
+                c_array += `\t/*Color of index ${p}*/\n`;
             }
     
             i = p * 4;
@@ -379,7 +377,7 @@ const lv_img_dsc_t ${out_name} = {
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', 'STR_PAD_LEFT') + ", ";
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', 'STR_PAD_LEFT') + ", ";
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "\t/*Color of index p*/\n";
+                c_array += `\t/*Color of index ${p}*/\n`;
             }
     
             i = p * 4;
@@ -391,7 +389,7 @@ const lv_img_dsc_t ${out_name} = {
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', 'STR_PAD_LEFT') + ", ";
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', 'STR_PAD_LEFT') + ", ";
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "\t/*Color of index p*/\n";
+                c_array += `\t/*Color of index ${p}*/\n`;
             }
     
             i = p * 4;
@@ -403,7 +401,7 @@ const lv_img_dsc_t ${out_name} = {
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', 'STR_PAD_LEFT') + ", ";
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', 'STR_PAD_LEFT') + ", ";
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "\t/*Color of index p*/\n";
+                c_array += `\t/*Color of index ${p}*/\n`;
             }
     
             i = p * 4;
@@ -491,7 +489,8 @@ async function convert(imagePath, options) {
     const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
     const out_name = options.outName || path.parse(imagePath).name;
 
-    const alpha = (options.cf == ImageMode.CF_TRUE_COLOR_ALPHA);
+    const alpha = (options.cf == ImageMode.CF_TRUE_COLOR_ALPHA || options.cf == ImageMode.CF_ALPHA_1_BIT || options.cf == ImageMode.CF_ALPHA_2_BIT || options.cf == ImageMode.CF_ALPHA_4_BIT || options.cf == ImageMode.CF_ALPHA_8_BIT);
+    const c_creator = new Converter(img.width, img.height, imageData, options.dith, options.cf, alpha);
 
     let c_res_array;
     if(options.cf == ImageMode.CF_TRUE_COLOR || options.cf == ImageMode.CF_TRUE_COLOR_ALPHA) {
@@ -500,9 +499,9 @@ async function convert(imagePath, options) {
         const c_565_swap = new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565_SWAP, alpha).convert();
         const c_888 = new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_888, alpha).convert();
         c_res_array = c_332 + c_565 + c_565_swap + c_888;
-    }
-
-    const c_creator = new Converter(img.width, img.height, imageData, options.dith, options.cf, alpha);
+    } else
+        c_res_array = c_creator.convert();
+    
     return c_creator.get_c_header(out_name) + c_res_array + c_creator.get_c_footer(options.cf, out_name);
 }
 
