@@ -1,0 +1,41 @@
+{
+  "name": "lv_img_conv",
+  "version": "0.1.0",
+  "description": "Image converter for LittlevGL",
+  "keywords": [
+    "image",
+    "convertor",
+    "embedded"
+  ],
+  "scripts": {
+    "start": "parcel ./web/index.html --open",
+    "build": "parcel build ./web/index.html ./web/content.html --public-url ./"
+  },
+  "bin": {
+    "lv_img_conv": "lv_img_conv.js"
+  },
+  "repository": "littlevgl/lv_img_conv",
+  "author": "embeddedt",
+  "license": "MIT",
+  "homepage": "https://github.com/littlevgl/lv_img_conv",
+  "browserslist": [
+    "defaults",
+    "not IE 11",
+    "not IE_Mob 11",
+    "maintained node versions"
+  ],
+  "devDependencies": {
+    "@types/locutus": "0.0.6",
+    "@types/node": "^14.0.13",
+    "@types/yargs": "^15.0.5",
+    "parcel-bundler": "^1.12.4",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5"
+  },
+  "dependencies": {
+    "canvas": "^2.6.1",
+    "locutus": "^2.0.11",
+    "rgbquant": "^1.1.2",
+    "yargs": "^15.1.0"
+  }
+}
