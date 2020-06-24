@@ -63,9 +63,33 @@ class Converter {
         if(this.cf == ImageMode.CF_INDEXED_2_BIT) palette_size = 4;
         if(this.cf == ImageMode.CF_INDEXED_4_BIT) palette_size = 16;
         if(this.cf == ImageMode.CF_INDEXED_8_BIT) palette_size = 256;
+        this.d_out = [];
 
         if(palette_size) {
-            throw new Error("Palette images are unsupported")
+            const pointContainer = utils.PointContainer.fromUint8Array(this.imageData, this.w, this.h);
+            const palette = await buildPalette([pointContainer], {
+                colors: palette_size, // optional
+            });
+            const color_arr = this.d_out;
+            const palettePointArray = palette.getPointContainer().getPointArray();
+            const paletteColors = palettePointArray.map((point) => {
+                return point.uint32;
+            });
+            for(var i = 0; i < palette_size; i++) {
+                if(i < palettePointArray.length) {
+                    color_arr.push(palettePointArray[i].b, palettePointArray[i].g, palettePointArray[i].r, palettePointArray[i].a);
+                } else {
+                    color_arr.push(0, 0, 0, 0);
+                }
+            }
+            const outPointContainer = await applyPalette(pointContainer, palette, {
+            });
+            outPointContainer.getPointArray().forEach((point) => {
+                const index = paletteColors.indexOf(point.uint32);
+                if(index == -1)
+                    throw new Error("Unknown color??");
+                color_arr.push(index);
+            });
         } else {
             this.d_out = [];
 
@@ -416,6 +440,8 @@ const lv_img_dsc_t ${out_name} = {
         for(var y = 0; y < y_end; y++) {
             c_array += "\n  ";
             for(var x = 0; x < x_end; x++) {
+                if(i >= this.d_out.length)
+                    throw new Error("index out of range (" + i + ")");
                 if(this.cf == ImageMode.ICF_TRUE_COLOR_332) {
                     c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";  i++;
                     if(this.alpha) {
@@ -494,13 +520,13 @@ async function convert(imagePath, options) {
 
     let c_res_array;
     if(options.cf == ImageMode.CF_TRUE_COLOR || options.cf == ImageMode.CF_TRUE_COLOR_ALPHA) {
-        const c_332 = new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_332, alpha).convert();
-        const c_565 = new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565, alpha).convert();
-        const c_565_swap = new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565_SWAP, alpha).convert();
-        const c_888 = new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_888, alpha).convert();
+        const c_332 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_332, alpha).convert();
+        const c_565 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565, alpha).convert();
+        const c_565_swap = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565_SWAP, alpha).convert();
+        const c_888 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_888, alpha).convert();
         c_res_array = c_332 + c_565 + c_565_swap + c_888;
     } else
-        c_res_array = c_creator.convert();
+        c_res_array = await c_creator.convert();
     
     return c_creator.get_c_header(out_name) + c_res_array + c_creator.get_c_footer(options.cf, out_name);
 }
