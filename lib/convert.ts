@@ -6,6 +6,7 @@ import dechex from 'locutus/php/math/dechex';
 import str_pad from 'locutus/php/strings/str_pad';
 import count from 'locutus/php/array/count';
 import { buildPalette, utils, applyPalette, distance, image } from 'image-q';
+import { idate } from 'locutus/php/datetime';
 
 class Converter {
     dith = false;      /*Dithering enable/disable*/
@@ -58,11 +59,20 @@ class Converter {
 
     async convert() {
 
-        var palette_size = 0;
-        if(this.cf == ImageMode.CF_INDEXED_1_BIT) palette_size = 2;
-        if(this.cf == ImageMode.CF_INDEXED_2_BIT) palette_size = 4;
-        if(this.cf == ImageMode.CF_INDEXED_4_BIT) palette_size = 16;
-        if(this.cf == ImageMode.CF_INDEXED_8_BIT) palette_size = 256;
+        var palette_size = 0, bits_per_value = 0;
+        if(this.cf == ImageMode.CF_INDEXED_1_BIT) {
+            palette_size = 2;
+            bits_per_value = 1;
+        } else if(this.cf == ImageMode.CF_INDEXED_2_BIT) {
+            palette_size = 4;
+            bits_per_value = 2;
+        } else if(this.cf == ImageMode.CF_INDEXED_4_BIT) {
+            palette_size = 16;
+            bits_per_value = 4;
+        } else if(this.cf == ImageMode.CF_INDEXED_8_BIT) {
+            palette_size = 256;
+            bits_per_value = 8;
+        }
         this.d_out = [];
 
         if(palette_size) {
@@ -82,24 +92,29 @@ class Converter {
                     color_arr.push(0, 0, 0, 0);
                 }
             }
+
             const outPointContainer = await applyPalette(pointContainer, palette, {
             });
-            outPointContainer.getPointArray().forEach((point) => {
+            let currentValue = 0;
+            let numBitsShifted = 0;
+            const outPointArray = outPointContainer.getPointArray();
+            this.imageData = [];
+            outPointArray.forEach((point, arrayIndex) => {
                 const index = paletteColors.indexOf(point.uint32);
                 if(index == -1)
                     throw new Error("Unknown color??");
-                color_arr.push(index);
+                this.imageData.push(index);
             });
-        } else {
-            this.d_out = [];
+        }
 
-            /*Convert all the pixels*/
-            for(var y = 0; y < this.h; y++) {
-                this.dith_reset();
-    
-                for(var x = 0; x < this.w; ++x){
-                    this.conv_px(x, y);
-                }
+        
+
+        /*Convert all the pixels*/
+        for(var y = 0; y < this.h; y++) {
+            this.dith_reset();
+
+            for(var x = 0; x < this.w; ++x){
+                this.conv_px(x, y);
             }
         }
 
@@ -172,7 +187,10 @@ const lv_img_dsc_t ${out_name} = {
         const g = this.imageData[startIndex+1];
         const b = this.imageData[startIndex+2];
 
-        this.dith_next(r, g, b, x);
+        const c = this.imageData[((y*this.w)+x)];
+
+        if(this.cf == ImageMode.ICF_TRUE_COLOR_565 || this.cf == ImageMode.ICF_TRUE_COLOR_565_SWAP || this.cf == ImageMode.ICF_TRUE_COLOR_332 || this.cf == ImageMode.ICF_TRUE_COLOR_888)
+            this.dith_next(r, g, b, x);
 
         if(this.cf == ImageMode.ICF_TRUE_COLOR_332) {
             const c8 = (this.r_act) | (this.g_act >> 3) | (this.b_act >> 6);	//RGB332
@@ -197,7 +215,9 @@ const lv_img_dsc_t ${out_name} = {
             let w = this.w >> 3;
             if(this.w & 0x07) w++;
             const p = w * y + (x >> 3);
-            if(!isset(this.d_out[p])) this.d_out[p] = 0;          /*Clear the bits first*/
+            if(!isset(this.d_out[p])) {
+                this.d_out[p] = 0;          /*Clear the bits first*/
+            }
             if(a > 0x80) {
                 this.d_out[p] |= 1 << (7 - (x & 0x7));
             }
@@ -222,7 +242,6 @@ const lv_img_dsc_t ${out_name} = {
             const p = this.w * y + x;
             this.d_out[p] = a;
         }
-        /*
         else if(this.cf == ImageMode.CF_INDEXED_1_BIT) {
             let w = this.w >> 3;
             if(this.w & 0x07) w++;
@@ -251,7 +270,6 @@ const lv_img_dsc_t ${out_name} = {
             const p = this.w * y + x + 1024;                              // +1024 for the palette
             this.d_out[p] = c & 0xFF;
         }
-        */
 	}
 
     dith_reset() {
@@ -430,18 +448,19 @@ const lv_img_dsc_t ${out_name} = {
     
             i = p * 4;
         }
-         else if(this.cf == ImageMode.CF_RAW_ALPHA || this.cf == ImageMode.CF_RAW_CHROMA) {
+        else if(this.cf == ImageMode.CF_RAW_ALPHA || this.cf == ImageMode.CF_RAW_CHROMA) {
             y_end = 1;
             x_end = count(this.d_out);
             i = 1;
-         }
+        }
     
-    
+        this.d_out.push(0);
         for(var y = 0; y < y_end; y++) {
             c_array += "\n  ";
             for(var x = 0; x < x_end; x++) {
-                if(i >= this.d_out.length)
-                    throw new Error("index out of range (" + i + ")");
+                if(i >= this.d_out.length) {
+                    console.error("index out of range (" + i + ")");
+                }
                 if(this.cf == ImageMode.ICF_TRUE_COLOR_332) {
                     c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";  i++;
                     if(this.alpha) {
