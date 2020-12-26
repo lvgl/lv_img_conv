@@ -1,11 +1,11 @@
-import { createCanvas, loadImage } from 'canvas';
+import { createCanvas, loadImage, Image } from 'canvas';
 import path from 'path';
 import { ImageMode } from './enums';
 import round from 'locutus/php/math/round';
 import dechex from 'locutus/php/math/dechex';
 import str_pad from 'locutus/php/strings/str_pad';
 import count from 'locutus/php/array/count';
-import { buildPalette, utils, applyPalette, distance, image } from 'image-q';
+import { buildPalette, utils, applyPalette, distance, image } from './image-q/image-q';
 import { idate } from 'locutus/php/datetime';
 
 class Converter {
@@ -523,16 +523,13 @@ const lv_img_dsc_t ${out_name} = {
 }
 
 
-
-async function convert(imagePath, options) {
-    const img = await loadImage(imagePath);
-
+async function convertImageBlob(img: Image, options): Promise<string> {
     console.log(`${img.width}x${img.height}`);
     const canvas = createCanvas(img.width, img.height);
     const ctx = canvas.getContext('2d')
     ctx.drawImage(img, 0, 0);
     const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
-    const out_name = options.outName || path.parse(imagePath).name;
+    const out_name = options.outName;
 
     const alpha = (options.cf == ImageMode.CF_TRUE_COLOR_ALPHA || options.cf == ImageMode.CF_ALPHA_1_BIT || options.cf == ImageMode.CF_ALPHA_2_BIT || options.cf == ImageMode.CF_ALPHA_4_BIT || options.cf == ImageMode.CF_ALPHA_8_BIT);
     const c_creator = new Converter(img.width, img.height, imageData, options.dith, options.cf, alpha);
@@ -550,4 +547,11 @@ async function convert(imagePath, options) {
     return c_creator.get_c_header(out_name) + c_res_array + c_creator.get_c_footer(options.cf, out_name);
 }
 
+async function convert(imagePath, options) {
+    const img = await loadImage(imagePath);
+    return convertImageBlob(img, Object.assign({}, options, { outName: options.outName || path.parse(imagePath).name }));
+    
+}
+
 export default convert;
+export { convertImageBlob };
