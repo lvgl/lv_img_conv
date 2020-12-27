@@ -16,7 +16,7 @@ class Converter {
     alpha = false;     /*Add alpha byte or not*/
     chroma = false;    /*Chroma keyed?*/
     d_out: Array<number>;     /*Output data (result)*/
-    imageData: Array<number>; /* Input image data */
+    imageData: Array<number>|Uint8Array; /* Input image data */
 
     /*Helper variables*/
     r_act: number;
@@ -58,7 +58,10 @@ class Converter {
     }
 
     async convert() {
-
+        if(this.cf == ImageMode.CF_RAW || this.cf == ImageMode.CF_RAW_ALPHA) {
+            const str = "\n" + Array.from((this.imageData as Uint8Array)).map(val => "0x" + str_pad(dechex(val), 2, '0', 'STR_PAD_LEFT')).join(", ") + "\n";
+            return str;
+        }
         var palette_size = 0, bits_per_value = 0;
         if(this.cf == ImageMode.CF_INDEXED_1_BIT) {
             palette_size = 2;
@@ -103,7 +106,7 @@ class Converter {
                 const index = paletteColors.indexOf(point.uint32);
                 if(index == -1)
                     throw new Error("Unknown color??");
-                this.imageData.push(index);
+                (this.imageData as Array<number>).push(index);
             });
         }
 
@@ -523,32 +526,51 @@ const lv_img_dsc_t ${out_name} = {
 }
 
 
-async function convertImageBlob(img: Image, options): Promise<string> {
-    console.log(`${img.width}x${img.height}`);
-    const canvas = createCanvas(img.width, img.height);
-    const ctx = canvas.getContext('2d')
-    ctx.drawImage(img, 0, 0);
-    const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
+async function convertImageBlob(img: Image|Uint8Array, options): Promise<string> {
+    function isImage(img, options): img is Image {
+        return options.cf != ImageMode.CF_RAW && options.cf != ImageMode.CF_RAW_ALPHA && options.cf != ImageMode.CF_RAW_CHROMA;
+    }
+    let c_res_array: string;
     const out_name = options.outName;
-
-    const alpha = (options.cf == ImageMode.CF_TRUE_COLOR_ALPHA || options.cf == ImageMode.CF_ALPHA_1_BIT || options.cf == ImageMode.CF_ALPHA_2_BIT || options.cf == ImageMode.CF_ALPHA_4_BIT || options.cf == ImageMode.CF_ALPHA_8_BIT);
-    const c_creator = new Converter(img.width, img.height, imageData, options.dith, options.cf, alpha);
-
-    let c_res_array;
-    if(options.cf == ImageMode.CF_TRUE_COLOR || options.cf == ImageMode.CF_TRUE_COLOR_ALPHA) {
-        const c_332 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_332, alpha).convert();
-        const c_565 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565, alpha).convert();
-        const c_565_swap = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565_SWAP, alpha).convert();
-        const c_888 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_888, alpha).convert();
-        c_res_array = c_332 + c_565 + c_565_swap + c_888;
-    } else
+    let c_creator: Converter;
+    if(isImage(img, options)) {
+        const canvas = createCanvas(img.width, img.height);
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
+    
+        const alpha = (options.cf == ImageMode.CF_TRUE_COLOR_ALPHA || options.cf == ImageMode.CF_ALPHA_1_BIT || options.cf == ImageMode.CF_ALPHA_2_BIT || options.cf == ImageMode.CF_ALPHA_4_BIT || options.cf == ImageMode.CF_ALPHA_8_BIT);
+        c_creator = new Converter(img.width, img.height, imageData, options.dith, options.cf, alpha);
+    
+        
+        if(options.cf == ImageMode.CF_TRUE_COLOR || options.cf == ImageMode.CF_TRUE_COLOR_ALPHA) {
+            const c_332 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_332, alpha).convert();
+            const c_565 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565, alpha).convert();
+            const c_565_swap = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565_SWAP, alpha).convert();
+            const c_888 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_888, alpha).convert();
+            c_res_array = c_332 + c_565 + c_565_swap + c_888;
+        } else
+            c_res_array = await c_creator.convert();
+        console.log(`${img.width}x${img.height}`);
+    } else {
+        c_creator = new Converter(0, 0, img, false, options.cf, options.cf == ImageMode.CF_RAW_ALPHA);
         c_res_array = await c_creator.convert();
+    }
+    
+    
     
     return c_creator.get_c_header(out_name) + c_res_array + c_creator.get_c_footer(options.cf, out_name);
 }
 
 async function convert(imagePath, options) {
-    const img = await loadImage(imagePath);
+    let img: Image|Uint8Array;
+    if(options.cf != ImageMode.CF_RAW && options.cf != ImageMode.CF_RAW_ALPHA && options.cf != ImageMode.CF_RAW_CHROMA)
+        img = await loadImage(imagePath);
+    else {
+        eval("var fs = require('fs');");
+        /** @ts-ignore */
+        img = fs.readFileSync(imagePath);
+    }
     return convertImageBlob(img, Object.assign({}, options, { outName: options.outName || path.parse(imagePath).name }));
     
 }

@@ -35,24 +35,39 @@ $("#convert-button").on("click", async() => {
         const file = input.files[i];
         if(file) {
             const reader = new FileReader();
-            var image = new Image();
             await new Promise((resolve, reject) => {
-                reader.onload = function(e) {
-                    image.onload = async function() {
-                        console.log("image loaded");
-                        const imageName = $("#name" + i).val();
-                        const imageString = await convertImageBlob(image, { cf: ImageMode[$("#cf").val()], imageName: imageName, outName: imageName });
-                        console.log(imageString);
-                        var blob = new Blob([ imageString ], {type: "text/x-c;charset=utf-8"});
-                        saveAs(blob, imageName + ".c");
-                        resolve();
-                    };
-                    image.onerror = function(e) {
-                        reject(e);
-                    };
-                    image.src = e.target.result;
+                
+                async function doConvert(blob) {
+                    const imageName = $("#name" + i).val();
+                    const imageString = await convertImageBlob(blob, { cf: ImageMode[$("#cf").val()], imageName: imageName, outName: imageName });
+                    console.log(imageString);
+                    var blob = new Blob([ imageString ], {type: "text/x-c;charset=utf-8"});
+                    saveAs(blob, imageName + ".c");
+                    resolve();
                 }
-                reader.readAsDataURL(file);
+                if($("#cf").val().startsWith("CF_RAW")) {
+                    reader.readAsArrayBuffer(file);
+                    reader.onload = function(e) {
+                        console.log("loaded");
+                        /** @type {ArrayBuffer} */
+                        const buf = e.target.result;
+                        doConvert(new Uint8Array(buf));
+                    }
+                } else {
+                    reader.onload = function(e) {
+                        var image = new Image();
+                        image.onload = function() {
+                            console.log("loaded");
+                            doConvert(image);
+                        };
+    
+                        image.onerror = function(e) {
+                            reject(e);
+                        };
+                        image.src = e.target.result;
+                    }
+                    reader.readAsDataURL(file);
+                }
             });
         }
     }
