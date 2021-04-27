@@ -24,6 +24,11 @@ const argv = yargs
         description: 'color format of image',
         choices: Object.keys(ImageMode).filter((v) => (isNaN(v as any) && !v.startsWith("ICF"))) /* skip internal formats */
     })
+    .option('swap-endian', {
+        alias: 's',
+        type: 'boolean',
+        description: 'swap endian of image'
+    })
     .argv
 
 
@@ -45,7 +50,7 @@ async function convertAllImages() {
     for(const imagePath of argv._) {
         console.log("Beginning conversion of " + imagePath);
         const imageName = argv.i ? argv.i : getFileName(path.basename(imagePath));
-        const cFileString = await convert(imagePath, { cf: ImageMode[argv["color-format"]], imageName: imageName });
+        const cFileString = await convert(imagePath, { cf: ImageMode[argv["color-format"]], swapEndian: argv.s, imageName: imageName });
         const outputPath: string = (argv.o ? argv.o : getCFilePath(imagePath)) as any;
         if(fs.existsSync(outputPath)) {
             if(argv.f) {
