@@ -39,7 +39,8 @@ $("#convert-button").on("click", async() => {
                 
                 async function doConvert(blob) {
                     const imageName = $("#name" + i).val();
-                    const imageString = await convertImageBlob(blob, { cf: ImageMode[$("#cf").val()], imageName: imageName, outName: imageName });
+                    const swapEndian = document.querySelector("#endian-checkbox").checked;
+                    const imageString = await convertImageBlob(blob, { cf: ImageMode[$("#cf").val()], imageName: imageName, outName: imageName, swapEndian: swapEndian });
                     console.log(imageString);
                     var blob = new Blob([ imageString ], {type: "text/x-c;charset=utf-8"});
                     saveAs(blob, imageName + ".c");
