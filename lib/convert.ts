@@ -6,7 +6,6 @@ import dechex from 'locutus/php/math/dechex';
 import str_pad from 'locutus/php/strings/str_pad';
 import count from 'locutus/php/array/count';
 import { buildPalette, utils, applyPalette, distance, image } from './image-q/image-q';
-import bswap from 'bswap';
 
 class Converter {
     dith = false;      /*Dithering enable/disable*/
