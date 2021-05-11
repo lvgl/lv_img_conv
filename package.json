@@ -1,7 +1,7 @@
 {
   "name": "lv_img_conv",
   "version": "0.1.0",
-  "description": "Image converter for LittlevGL",
+  "description": "Image converter for LVGL",
   "keywords": [
     "image",
     "convertor",
