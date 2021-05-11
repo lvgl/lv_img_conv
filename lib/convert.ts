@@ -11,6 +11,7 @@ class Converter {
     dith = false;      /*Dithering enable/disable*/
     w = 0;         /*Image width*/
     h = 0;         /*Image height*/
+    raw_len = 0; /* RAW image data size */
     cf: ImageMode;        /*Color format*/
     alpha = false;     /*Add alpha byte or not*/
     chroma = false;    /*Chroma keyed?*/
@@ -60,8 +61,11 @@ class Converter {
 
     async convert() {
         if(this.cf == ImageMode.CF_RAW || this.cf == ImageMode.CF_RAW_ALPHA) {
-            const str = "\n" + Array.from((this.imageData as Uint8Array)).map(val => "0x" + str_pad(dechex(val), 2, '0', 'STR_PAD_LEFT')).join(", ") + "\n";
-            return str;
+            const d_array = Array.from((this.imageData as Uint8Array));
+            this.raw_len = d_array.length;
+            let str = "\n    " + d_array.map((val, i) => "0x" + str_pad(dechex(val), 2, '0', 'STR_PAD_LEFT') + ((i % 13) == 12 ? ", \n    " : ", ")).join("");
+            str = str.substr(0, str.length-2);
+            return str + "\n";
         }
         var palette_size = 0, bits_per_value = 0;
         if(this.cf == ImageMode.CF_INDEXED_1_BIT) {
@@ -162,9 +166,9 @@ const lv_img_dsc_t ${out_name} = {
     else if($cf == ImageMode.CF_INDEXED_2_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_INDEXED_2BIT,";
     else if($cf == ImageMode.CF_INDEXED_4_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_INDEXED_4BIT,";
     else if($cf == ImageMode.CF_INDEXED_8_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_INDEXED_8BIT,";
-    else if($cf == ImageMode.CF_RAW) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_RAW,";
-    else if($cf == ImageMode.CF_RAW_ALPHA) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_RAW_ALPHA,";
-    else if($cf == ImageMode.CF_RAW_CHROMA) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_RAW_CHROMA_KEYED,";
+    else if($cf == ImageMode.CF_RAW) $c_footer += "  .data_size = " + this.raw_len + ",\n  .header.cf = LV_IMG_CF_RAW,";
+    else if($cf == ImageMode.CF_RAW_ALPHA) $c_footer += "  .data_size = " + this.raw_len + ",\n  .header.cf = LV_IMG_CF_RAW_ALPHA,";
+    else if($cf == ImageMode.CF_RAW_CHROMA) $c_footer += "  .data_size = " + this.raw_len + ",\n  .header.cf = LV_IMG_CF_RAW_CHROMA_KEYED,";
 
     $c_footer += "\n  .data = " + out_name + `_map,
 };\n`;
