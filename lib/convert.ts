@@ -1,23 +1,33 @@
 import { createCanvas, loadImage, Image } from 'canvas';
 import path from 'path';
-import { ImageMode } from './enums';
+import { ImageMode, OutputMode } from './enums';
 import round from 'locutus/php/math/round';
 import dechex from 'locutus/php/math/dechex';
 import str_pad from 'locutus/php/strings/str_pad';
 import count from 'locutus/php/array/count';
 import { buildPalette, utils, applyPalette, distance, image } from './image-q/image-q';
 
+interface ConverterOptions {
+    dith: boolean;
+    cf: ImageMode;
+    outputFormat: OutputMode;
+    binaryFormat: ImageMode;
+    swapEndian: boolean;
+    outName: string;
+}
 class Converter {
     dith = false;      /*Dithering enable/disable*/
     w = 0;         /*Image width*/
     h = 0;         /*Image height*/
     raw_len = 0; /* RAW image data size */
     cf: ImageMode;        /*Color format*/
+    outputFormat: OutputMode;
     alpha = false;     /*Add alpha byte or not*/
     chroma = false;    /*Chroma keyed?*/
     d_out: Array<number>;     /*Output data (result)*/
     imageData: Array<number>|Uint8Array; /* Input image data */
     swapEndian = false; /* Whether to swap endian or not */
+    options: ConverterOptions;
 
     /*Helper variables*/
     r_act: number;
@@ -34,8 +44,8 @@ class Converter {
     b_nerr: number;
 
 
-    constructor(w, h, imageData, dith, cf, alpha, swapEndian) {
-        this.dith = dith;
+    constructor(w: number, h: number, imageData, alpha: boolean, options: Partial<ConverterOptions>) {
+        this.dith = options.dith;
         this.w = w;
         this.h = h;
         this.imageData = imageData;
@@ -54,12 +64,14 @@ class Converter {
         this.r_nerr = 0;  /*Classification error for next pixel*/
         this.g_nerr = 0;
         this.b_nerr = 0;
-        this.cf = cf;
+        this.cf = options.cf;
         this.alpha = alpha;
-        this.swapEndian = swapEndian;
+        this.swapEndian = options.swapEndian;
+        this.outputFormat = options.outputFormat;
+        this.options = options as ConverterOptions;
     }
 
-    async convert() {
+    async convert(): Promise<string|ArrayBuffer> {
         if(this.cf == ImageMode.CF_RAW || this.cf == ImageMode.CF_RAW_ALPHA) {
             const d_array = Array.from((this.imageData as Uint8Array));
             this.raw_len = d_array.length;
@@ -116,7 +128,11 @@ class Converter {
         }
 
         
-
+        let oldColorFormat;
+        if(this.outputFormat == OutputMode.BIN) {
+            oldColorFormat = this.cf;
+            this.cf = this.options.binaryFormat;
+        }
         /*Convert all the pixels*/
         for(var y = 0; y < this.h; y++) {
             this.dith_reset();
@@ -126,7 +142,55 @@ class Converter {
             }
         }
 
-        return this.format_to_c_array();
+        if(this.outputFormat == OutputMode.BIN) {
+            this.cf = oldColorFormat;
+        }
+
+        if(false)
+            return this.format_to_c_array();
+        else {
+            var $content = this.d_out;
+            var $cf = this.cf;
+            var $lv_cf = 4;               /*Color format in LittlevGL*/
+            switch($cf) {
+                case ImageMode.CF_TRUE_COLOR:
+                    $lv_cf = 4; break;
+                case ImageMode.CF_TRUE_COLOR_ALPHA:
+                    $lv_cf = 5; break;
+                case ImageMode.CF_TRUE_COLOR_CHROMA:
+                    $lv_cf = 6; break;
+                case ImageMode.CF_INDEXED_1_BIT:
+                    $lv_cf = 7; break;
+                case ImageMode.CF_INDEXED_2_BIT:
+                    $lv_cf = 8; break;
+                case ImageMode.CF_INDEXED_4_BIT:
+                    $lv_cf = 9; break;
+                case ImageMode.CF_INDEXED_8_BIT:
+                    $lv_cf = 10; break;
+                case ImageMode.CF_ALPHA_1_BIT:
+                    $lv_cf = 11; break;
+                case ImageMode.CF_ALPHA_2_BIT:
+                    $lv_cf = 12; break;
+                case ImageMode.CF_ALPHA_4_BIT:
+                    $lv_cf = 13; break;
+                case ImageMode.CF_ALPHA_8_BIT:
+                    $lv_cf = 14; break;
+            }
+
+            var $header_32bit = ($lv_cf | (this.w << 10) | (this.h << 21)) >>> 0;
+
+            var finalBinary = new Uint8Array(this.d_out.length + 4);
+            finalBinary[0] = ($header_32bit & 0xFF);
+            finalBinary[1] = ($header_32bit & 0xFF00) >> 8;
+            finalBinary[2] = ($header_32bit & 0xFF0000) >> 16;
+            finalBinary[3] = ($header_32bit & 0xFF000000) >> 24;
+
+            for(var i = 0; i < this.d_out.length; i++) {
+                finalBinary[i+4] = this.d_out[i];
+                
+            }
+            return finalBinary.buffer;
+        }
     }
 
     get_c_header(out_name: string): string {
@@ -544,12 +608,14 @@ const lv_img_dsc_t ${out_name} = {
 }
 
 
-async function convertImageBlob(img: Image|Uint8Array, options): Promise<string> {
+async function convertImageBlob(img: Image|Uint8Array, options: Partial<ConverterOptions>): Promise<string|ArrayBuffer> {
     function isImage(img, options): img is Image {
         return options.cf != ImageMode.CF_RAW && options.cf != ImageMode.CF_RAW_ALPHA && options.cf != ImageMode.CF_RAW_CHROMA;
     }
     let c_res_array: string;
+    let bin_res_blob: ArrayBuffer;
     const out_name = options.outName;
+    const outputFormat: OutputMode = options.outputFormat;
     let c_creator: Converter;
     if(isImage(img, options)) {
         const canvas = createCanvas(img.width, img.height);
@@ -558,25 +624,38 @@ async function convertImageBlob(img: Image|Uint8Array, options): Promise<string>
         const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
     
         const alpha = (options.cf == ImageMode.CF_TRUE_COLOR_ALPHA || options.cf == ImageMode.CF_ALPHA_1_BIT || options.cf == ImageMode.CF_ALPHA_2_BIT || options.cf == ImageMode.CF_ALPHA_4_BIT || options.cf == ImageMode.CF_ALPHA_8_BIT);
-        c_creator = new Converter(img.width, img.height, imageData, options.dith, options.cf, alpha, options.swapEndian);
+        c_creator = new Converter(img.width, img.height, imageData, alpha, options);
         
-        if(options.cf == ImageMode.CF_TRUE_COLOR || options.cf == ImageMode.CF_TRUE_COLOR_ALPHA) {
-            const c_332 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_332, alpha, options.swapEndian).convert();
-            const c_565 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565, alpha, options.swapEndian).convert();
-            const c_565_swap = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_565_SWAP, alpha, options.swapEndian).convert();
-            const c_888 = await new Converter(img.width, img.height, imageData, options.dith, ImageMode.ICF_TRUE_COLOR_888, alpha, options.swapEndian).convert();
-            c_res_array = c_332 + c_565 + c_565_swap + c_888;
-        } else
-            c_res_array = await c_creator.convert();
+        if(options.outputFormat == OutputMode.C) {
+            if(options.cf == ImageMode.CF_TRUE_COLOR || options.cf == ImageMode.CF_TRUE_COLOR_ALPHA) {
+                const arrayList = await Promise.all([
+                    ImageMode.ICF_TRUE_COLOR_332,
+                    ImageMode.ICF_TRUE_COLOR_565,
+                    ImageMode.ICF_TRUE_COLOR_565_SWAP,
+                    ImageMode.ICF_TRUE_COLOR_888
+                ].map(cf => new Converter(img.width, img.height, imageData, alpha, Object.assign({ cf }, options)).convert())) as string[];
+                c_res_array = arrayList.join("");
+            } else
+                c_res_array = await c_creator.convert() as string;
+        } else {
+            const binaryConv = new Converter(img.width, img.height, imageData, alpha, options);
+            bin_res_blob = await binaryConv.convert() as ArrayBuffer;
+        }
+        
         console.log(`${img.width}x${img.height}`);
     } else {
-        c_creator = new Converter(0, 0, img, false, options.cf, options.cf == ImageMode.CF_RAW_ALPHA, options.swapEndian);
-        c_res_array = await c_creator.convert();
+        c_creator = new Converter(0, 0, img, options.cf == ImageMode.CF_RAW_ALPHA, options);
+        if(options.outputFormat == OutputMode.C)
+            c_res_array = await c_creator.convert() as string;
+        else
+            bin_res_blob = await c_creator.convert() as ArrayBuffer;
     }
     
     
-    
-    return c_creator.get_c_header(out_name) + c_res_array + c_creator.get_c_footer(options.cf, out_name);
+    if(outputFormat == OutputMode.BIN)
+        return bin_res_blob;
+    else
+        return c_creator.get_c_header(out_name) + c_res_array + c_creator.get_c_footer(options.cf, out_name);
 }
 
 async function convert(imagePath, options) {

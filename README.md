@@ -10,8 +10,11 @@ To use it:
 
 Example usage:
 
-```
+```sh
+# C format
 ./lv_img_conv.js logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA
+# Binary format (RGB565)
+./lv_img_conv.js logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA -t bin --binary-format 565
 ```
 
 A file called `logo_lvgl.c` will be created in the same directory.

@@ -1,6 +1,6 @@
 import bsCustomFileInput from 'bs-custom-file-input';
 import { convertImageBlob } from '../lib/convert';
-import { ImageMode } from '../lib/enums';
+import { ImageMode, OutputMode, BINARY_FORMAT_PREFIX } from '../lib/enums';
 import { saveAs } from 'file-saver';
 import { resolve } from 'path';
 import { rejects } from 'assert';
@@ -27,6 +27,13 @@ $(document).ready(function () {
 
 $("#customFile").change(updateNameTextboxes);
 
+$("#format").on("change", function() {
+    const needsDisable = $("#format").val() != "c_array";
+    if(needsDisable)
+        $("endian-checkbox").prop("checked", false);
+    $("#endian-checkbox").prop("disabled", needsDisable);
+})
+
 $("#convert-button").on("click", async() => {
     $("#convert-button").attr("disabled", true);
     /** @type {HTMLInputElement} */
@@ -36,14 +43,26 @@ $("#convert-button").on("click", async() => {
         if(file) {
             const reader = new FileReader();
             await new Promise((resolve, reject) => {
-                
+                const outputType = $("#format").val();
+                let outputMode, binaryFormat;
+                if(outputType == "c_array")
+                    outputMode = OutputMode.C;
+                else {
+                    outputMode = OutputMode.BIN;
+                    const binFormatRequest = BINARY_FORMAT_PREFIX + outputType.substring(4).toUpperCase();
+                    binaryFormat = ImageMode[binFormatRequest];
+                    if(typeof binaryFormat == 'undefined')
+                        throw new Error("Binary format not found: " + binFormatRequest);
+                }
                 async function doConvert(blob) {
                     const imageName = $("#name" + i).val();
-                    const swapEndian = document.querySelector("#endian-checkbox").checked;
-                    const imageString = await convertImageBlob(blob, { cf: ImageMode[$("#cf").val()], imageName: imageName, outName: imageName, swapEndian: swapEndian });
+                    const swapEndian = outputMode == OutputMode.C && document.querySelector("#endian-checkbox").checked;
+                    const imageString = await convertImageBlob(blob, { cf: ImageMode[$("#cf").val()], imageName: imageName, outName: imageName, swapEndian: swapEndian, outputFormat: outputMode, binaryFormat });
                     console.log(imageString);
-                    var blob = new Blob([ imageString ], {type: "text/x-c;charset=utf-8"});
-                    saveAs(blob, imageName + ".c");
+                    var blob = new Blob([ imageString ], {
+                        type: outputMode == OutputMode.BIN ? "binary/octet-stream" : "text/x-c;charset=utf-8"
+                    });
+                    saveAs(blob, imageName + "." + (outputMode == OutputMode.BIN ? "bin" : "c"));
                     resolve();
                 }
                 if($("#cf").val().startsWith("CF_RAW")) {

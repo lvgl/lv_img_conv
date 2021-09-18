@@ -20,4 +20,12 @@ enum ImageMode {
     CF_TRUE_COLOR_CHROMA = 102,
 };
 
-export { ImageMode };
+enum OutputMode {
+    C,
+    BIN
+}
+
+
+const BINARY_FORMAT_PREFIX = "ICF_TRUE_COLOR_";
+
+export { ImageMode, OutputMode, BINARY_FORMAT_PREFIX };
