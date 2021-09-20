@@ -1,8 +1,6 @@
 # Image converter for LVGL
 
-`lv_img_conv` is a new image converter for LVGL, designed to replace the previous PHP converter at https://github.com/lvgl/lv_utils/blob/master/img_conv_core.php.
-
-To use it:
+How to install:
 
 1. Make sure Node.js is installed.
 2. Clone this repository.
@@ -18,3 +16,9 @@ Example usage:
 ```
 
 A file called `logo_lvgl.c` will be created in the same directory.
+
+## Attribution
+
+This converter was originally created by @embeddedt as an attempt to solve some of the common issues experienced with the PHP converter, such as running out of memory on large images or failing to read certain PNGs correctly.
+
+Much of the actual conversion logic remains unchanged from the previous implementation, which can be found at https://github.com/lvgl/lv_utils/blob/master/img_conv_core.php.
