@@ -3,8 +3,9 @@
 How to install:
 
 1. Make sure Node.js is installed.
-2. Clone this repository.
-3. Run `npm install` to install needed dependencies.
+1. Not always needed, but recommended: ensure the necessary [native dependencies for canvas](https://github.com/Automattic/node-canvas#compiling) are installed.
+1. Clone this repository.
+1. Run `npm install` to install needed dependencies.
 
 Example usage:
 
