@@ -146,7 +146,7 @@ class Converter {
             this.cf = oldColorFormat;
         }
 
-        if(false)
+        if(this.outputFormat == OutputMode.C)
             return this.format_to_c_array();
         else {
             var $content = this.d_out;
@@ -450,7 +450,7 @@ const lv_img_dsc_t ${out_name} = {
       return val;
     }
     format_to_c_array() {
-
+        
         let c_array = "";
         var i = 0;
         let y_end = this.h;
@@ -601,7 +601,6 @@ const lv_img_dsc_t ${out_name} = {
         if(this.cf == ImageMode.ICF_TRUE_COLOR_332 || this.cf == ImageMode.ICF_TRUE_COLOR_565 || this.cf == ImageMode.ICF_TRUE_COLOR_565_SWAP || this.cf == ImageMode.ICF_TRUE_COLOR_888) {
             c_array += "\n#endif";
         }
-    
         return c_array;
     
     }
@@ -633,7 +632,7 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
                     ImageMode.ICF_TRUE_COLOR_565,
                     ImageMode.ICF_TRUE_COLOR_565_SWAP,
                     ImageMode.ICF_TRUE_COLOR_888
-                ].map(cf => new Converter(img.width, img.height, imageData, alpha, Object.assign({ cf }, options)).convert())) as string[];
+                ].map(cf => new Converter(img.width, img.height, imageData, alpha, Object.assign({}, options, { cf })).convert())) as string[];
                 c_res_array = arrayList.join("");
             } else
                 c_res_array = await c_creator.convert() as string;
