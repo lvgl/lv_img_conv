@@ -55,7 +55,11 @@ $("#convert-button").on("click", async() => {
                         throw new Error("Binary format not found: " + binFormatRequest);
                 }
                 async function doConvert(blob) {
-                    const imageName = $("#name" + i).val();
+                    let imageName = $("#name" + i).val();
+                    if (imageName == "") {
+                        imageName = file.name.split('.')[0];
+                    }
+
                     const swapEndian = outputMode == OutputMode.C && document.querySelector("#endian-checkbox").checked;
                     const imageString = await convertImageBlob(blob, { cf: ImageMode[$("#cf").val()], imageName: imageName, outName: imageName, swapEndian: swapEndian, outputFormat: outputMode, binaryFormat });
                     console.log(imageString);
@@ -80,7 +84,7 @@ $("#convert-button").on("click", async() => {
                             console.log("loaded");
                             doConvert(image);
                         };
-    
+
                         image.onerror = function(e) {
                             reject(e);
                         };
