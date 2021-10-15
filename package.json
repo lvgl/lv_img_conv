@@ -9,6 +9,7 @@
   ],
   "files": [
     "lv_img_conv.js",
+    "tsconfig.json",
     "lib/"
   ],
   "scripts": {
