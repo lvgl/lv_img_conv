@@ -7,6 +7,10 @@
     "convertor",
     "embedded"
   ],
+  "files": [
+    "lv_img_conv.js",
+    "lib/"
+  ],
   "scripts": {
     "start": "parcel ./web/index.html --open",
     "build": "parcel build ./web/index.html ./web/content.html --public-url ./"
@@ -14,10 +18,10 @@
   "bin": {
     "lv_img_conv": "lv_img_conv.js"
   },
-  "repository": "littlevgl/lv_img_conv",
+  "repository": "lvgl/lv_img_conv",
   "author": "embeddedt",
   "license": "MIT",
-  "homepage": "https://github.com/littlevgl/lv_img_conv",
+  "homepage": "https://github.com/lvgl/lv_img_conv",
   "browserslist": [
     "defaults",
     "not IE 11",
