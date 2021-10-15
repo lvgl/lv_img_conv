@@ -1,6 +1,6 @@
 {
   "name": "lv_img_conv",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Image converter for LVGL",
   "keywords": [
     "image",
