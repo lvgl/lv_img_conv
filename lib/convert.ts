@@ -195,7 +195,11 @@ class Converter {
 
     get_c_header(out_name: string): string {
         var $c_header =
-        `#include \"lvgl/lvgl.h\"
+        `#ifdef LV_LVGL_H_INCLUDE_SIMPLE
+#include \"lvgl.h\"
+#else
+#include \"lvgl/lvgl.h\"
+#endif
 
 #ifndef LV_ATTRIBUTE_MEM_ALIGN
 #define LV_ATTRIBUTE_MEM_ALIGN
