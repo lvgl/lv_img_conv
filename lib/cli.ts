@@ -16,7 +16,7 @@ const argv = yargs
     .option('force', {
         alias: 'f',
         type: 'boolean',
-        description: 'allow overwriting input file'
+        description: 'allow overwriting the output file'
     })
     .option('color-format', {
         alias: 'c',
