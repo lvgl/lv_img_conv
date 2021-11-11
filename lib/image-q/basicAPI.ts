@@ -101,7 +101,7 @@ export async function buildPalette(
     images.forEach(image => paletteQuantizer.sample(image));
 
     let palette: Palette;
-    let timerId: number;
+    let timerId: NodeJS.Immediate;
     const iterator = paletteQuantizer.quantize();
     const next = () => {
       try {
@@ -114,7 +114,7 @@ export async function buildPalette(
           timerId = setImmediate(next);
         }
       } catch (error) {
-        clearTimeout(timerId);
+        clearImmediate(timerId);
         reject(error);
       }
     };
@@ -156,7 +156,7 @@ export async function applyPalette(
     );
 
     let outPointContainer: PointContainer;
-    let timerId: number;
+    let timerId: NodeJS.Immediate;
     const iterator = imageQuantizer.quantize(image, palette);
     const next = () => {
       try {
@@ -171,7 +171,7 @@ export async function applyPalette(
           timerId = setImmediate(next);
         }
       } catch (error) {
-        clearTimeout(timerId);
+        clearImmediate(timerId);
         reject(error);
       }
     };
