@@ -630,7 +630,7 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
         c_creator = new Converter(img.width, img.height, imageData, alpha, options);
         
         if(options.outputFormat == OutputMode.C) {
-            if(options.cf == ImageMode.CF_TRUE_COLOR || options.cf == ImageMode.CF_TRUE_COLOR_ALPHA) {
+            if(options.cf == ImageMode.CF_TRUE_COLOR || options.cf == ImageMode.CF_TRUE_COLOR_ALPHA || options.cf == ImageMode.CF_TRUE_COLOR_CHROMA) {
                 const arrayList = await Promise.all([
                     ImageMode.ICF_TRUE_COLOR_332,
                     ImageMode.ICF_TRUE_COLOR_565,
