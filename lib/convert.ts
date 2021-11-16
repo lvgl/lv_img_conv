@@ -1,6 +1,6 @@
 import { createCanvas, loadImage, Image } from 'canvas';
 import path from 'path';
-import { ImageMode, OutputMode } from './enums';
+import { ImageMode, ImageModeUtil, OutputMode } from './enums';
 import round from 'locutus/php/math/round';
 import dechex from 'locutus/php/math/dechex';
 import str_pad from 'locutus/php/strings/str_pad';
@@ -129,7 +129,8 @@ class Converter {
 
         
         let oldColorFormat;
-        if(this.outputFormat == OutputMode.BIN) {
+        const needsFormatSwap = this.outputFormat == OutputMode.BIN && ImageModeUtil.isTrueColor(this.cf);
+        if(needsFormatSwap) {
             oldColorFormat = this.cf;
             this.cf = this.options.binaryFormat;
         }
@@ -142,7 +143,7 @@ class Converter {
             }
         }
 
-        if(this.outputFormat == OutputMode.BIN) {
+        if(needsFormatSwap) {
             this.cf = oldColorFormat;
         }
 

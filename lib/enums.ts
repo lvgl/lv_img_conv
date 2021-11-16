@@ -20,6 +20,14 @@ enum ImageMode {
     CF_TRUE_COLOR_CHROMA = 102,
 };
 
+class ImageModeUtil {
+    public static isTrueColor(mode: string|ImageMode) {
+        if(typeof mode != 'string')
+            mode = ImageMode[mode];
+        return mode.startsWith("CF_TRUE_COLOR");
+    }
+}
+
 enum OutputMode {
     C,
     BIN
@@ -28,4 +36,4 @@ enum OutputMode {
 
 const BINARY_FORMAT_PREFIX = "ICF_TRUE_COLOR_";
 
-export { ImageMode, OutputMode, BINARY_FORMAT_PREFIX };
+export { ImageMode, ImageModeUtil, OutputMode, BINARY_FORMAT_PREFIX };

@@ -1,7 +1,7 @@
 /* implement suggestions from https://forum.littlevgl.com/t/a-little-extension-to-image-converter/1902 */
 
 import convert from './convert';
-import { ImageMode, OutputMode, BINARY_FORMAT_PREFIX } from './enums';
+import { ImageMode, OutputMode, BINARY_FORMAT_PREFIX, ImageModeUtil } from './enums';
 import fs from 'fs';
 import path from 'path';
 
@@ -60,18 +60,19 @@ async function convertAllImages() {
     }
     const outputMode = OutputMode[(argv.t as string).toUpperCase()];
     const binaryFormat = argv["binary-format"];
+    const colorFormat: ImageMode = ImageMode[argv["color-format"]];
     if(typeof outputMode == 'undefined') {
         console.error("Invalid output mode");
         process.exit(1);
     }
-    if(outputMode == OutputMode.BIN && typeof binaryFormat == 'undefined') {
-        console.error("--binary-format must be specified");
+    if(outputMode == OutputMode.BIN && ImageModeUtil.isTrueColor(colorFormat) && typeof binaryFormat == 'undefined') {
+        console.error("Error: when converting true color binary images, --binary-format must be specified");
         process.exit(1);
     }
     for(const imagePath of argv._) {
         console.log("Beginning conversion of " + imagePath);
         const imageName = argv.i ? argv.i : getFileName(path.basename(imagePath));
-        const cFileString = await convert(imagePath, { cf: ImageMode[argv["color-format"]], outputFormat: outputMode, binaryFormat: ImageMode[BINARY_FORMAT_PREFIX + binaryFormat], swapEndian: argv.s, imageName: imageName });
+        const cFileString = await convert(imagePath, { cf: colorFormat, outputFormat: outputMode, binaryFormat: ImageMode[BINARY_FORMAT_PREFIX + binaryFormat], swapEndian: argv.s, imageName: imageName });
         const outputPath: string = (argv.o ? argv.o : getCFilePath(imagePath, outputMode)) as any;
         if(fs.existsSync(outputPath)) {
             if(argv.f) {

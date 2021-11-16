@@ -1,6 +1,6 @@
 import bsCustomFileInput from 'bs-custom-file-input';
 import { convertImageBlob } from '../lib/convert';
-import { ImageMode, OutputMode, BINARY_FORMAT_PREFIX } from '../lib/enums';
+import { ImageMode, ImageModeUtil, OutputMode, BINARY_FORMAT_PREFIX } from '../lib/enums';
 import { saveAs } from 'file-saver';
 import { resolve } from 'path';
 import { rejects } from 'assert';
@@ -20,12 +20,36 @@ function updateNameTextboxes() {
     $(".name-row").css("display", input.files.length > 0 ? "" : "none");
 }
 
+function updateListedBinaryFormats() {
+    const needBinaryFormat = ImageModeUtil.isTrueColor($("#cf").val());
+    $("#format").children("option").each(function() {
+        if(!$(this).val().startsWith("bin")) {
+            /* bail out if not binary format */
+            return;
+        }
+        if($(this).val().startsWith("bin_")) {
+            /* has color code afterward */
+            $(this).prop("disabled", !needBinaryFormat);
+            $(this).prop("hidden", !needBinaryFormat);
+        } else {
+            /* has no color code */
+            $(this).prop("disabled", needBinaryFormat);
+            $(this).prop("hidden", needBinaryFormat);
+        }
+    });
+    /* Don't allow using disabled options */
+    if($("#format option:selected").prop("disabled"))
+        $("#format").val("c_array");
+}
+
 $(document).ready(function () {
     bsCustomFileInput.init();
     updateNameTextboxes();
+    updateListedBinaryFormats();
 });
 
 $("#customFile").change(updateNameTextboxes);
+$("#cf").on("change", updateListedBinaryFormats);
 
 $("#format").on("change", function() {
     const needsDisable = $("#format").val() != "c_array";
@@ -45,14 +69,18 @@ $("#convert-button").on("click", async() => {
             await new Promise((resolve, reject) => {
                 const outputType = $("#format").val();
                 let outputMode, binaryFormat;
+                const requestedCf = ImageMode[$("#cf").val()];
                 if(outputType == "c_array")
                     outputMode = OutputMode.C;
                 else {
                     outputMode = OutputMode.BIN;
-                    const binFormatRequest = BINARY_FORMAT_PREFIX + outputType.substring(4).toUpperCase();
-                    binaryFormat = ImageMode[binFormatRequest];
-                    if(typeof binaryFormat == 'undefined')
-                        throw new Error("Binary format not found: " + binFormatRequest);
+                    const needBinaryFormat = ImageModeUtil.isTrueColor(requestedCf);
+                    if(needBinaryFormat) {
+                        const binFormatRequest = BINARY_FORMAT_PREFIX + outputType.substring(4).toUpperCase();
+                        binaryFormat = ImageMode[binFormatRequest];
+                        if(typeof binaryFormat == 'undefined')
+                            throw new Error("Binary format not found: " + binFormatRequest);
+                    }
                 }
                 async function doConvert(blob) {
                     let imageName = $("#name" + i).val();
@@ -61,7 +89,7 @@ $("#convert-button").on("click", async() => {
                     }
 
                     const swapEndian = outputMode == OutputMode.C && document.querySelector("#endian-checkbox").checked;
-                    const imageString = await convertImageBlob(blob, { cf: ImageMode[$("#cf").val()], imageName: imageName, outName: imageName, swapEndian: swapEndian, outputFormat: outputMode, binaryFormat });
+                    const imageString = await convertImageBlob(blob, { cf: requestedCf, imageName: imageName, outName: imageName, swapEndian: swapEndian, outputFormat: outputMode, binaryFormat });
                     console.log(imageString);
                     var blob = new Blob([ imageString ], {
                         type: outputMode == OutputMode.BIN ? "binary/octet-stream" : "text/x-c;charset=utf-8"
