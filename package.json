@@ -29,14 +29,13 @@
     "not IE_Mob 11"
   ],
   "devDependencies": {
-    "@babel/preset-env": "^7.9.0",
     "@types/jquery": "^3.5.0",
     "@types/locutus": "0.0.6",
     "@types/node": "^14.14.16",
     "@types/yargs": "^15.0.5",
     "core-js": "^3.8.1",
-    "parcel-bundler": "^1.12.5",
-    "posthtml-include": "^1.4.3",
+    "parcel": "^2.0.0",
+    "posthtml-include": "^1.7.2",
     "typescript": "^3.9.5",
     "nan": "^2.15.0"
   },
