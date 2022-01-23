@@ -216,30 +216,71 @@ const LV_ATTRIBUTE_MEM_ALIGN ${$attr_name} uint8_t ` + out_name+ "_map[] = {";
         return $c_header;
     }
 
+    imagemode_to_enum_name($cf: ImageMode): string {
+        switch($cf) {
+            case ImageMode.CF_TRUE_COLOR:
+            case ImageMode.CF_TRUE_COLOR_ALPHA:
+            case ImageMode.CF_RAW:
+            case ImageMode.CF_RAW_ALPHA:
+                return "LV_IMG_" + ImageMode[$cf];
+            case ImageMode.CF_TRUE_COLOR_CHROMA:
+                return "LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED";
+            case ImageMode.CF_RAW_CHROMA:
+                return "LV_IMG_CF_RAW_CHROMA_KEYED";
+            case ImageMode.CF_ALPHA_1_BIT:
+            case ImageMode.CF_ALPHA_2_BIT:
+            case ImageMode.CF_ALPHA_4_BIT:
+            case ImageMode.CF_ALPHA_8_BIT:
+            case ImageMode.CF_INDEXED_1_BIT:
+            case ImageMode.CF_INDEXED_2_BIT:
+            case ImageMode.CF_INDEXED_4_BIT:
+            case ImageMode.CF_INDEXED_8_BIT:
+                return "LV_IMG_" + ImageMode[$cf].replace("_BIT", "BIT");
+            default:
+                throw new Error("unexpected color format");
+        }
+    }
+
     get_c_footer($cf, out_name) {
+
+        var header_cf = this.imagemode_to_enum_name($cf);
+        var data_size;
+
+        switch($cf) {
+            case ImageMode.CF_TRUE_COLOR:
+            case ImageMode.CF_TRUE_COLOR_ALPHA:
+            case ImageMode.CF_TRUE_COLOR_CHROMA:
+                data_size = this.w * this.h + " * " + ($cf == ImageMode.CF_TRUE_COLOR_ALPHA ? "LV_IMG_PX_SIZE_ALPHA_BYTE" : "LV_COLOR_SIZE / 8");
+                break;
+            case ImageMode.CF_ALPHA_1_BIT:
+            case ImageMode.CF_ALPHA_2_BIT:
+            case ImageMode.CF_ALPHA_4_BIT:
+            case ImageMode.CF_ALPHA_8_BIT:
+            case ImageMode.CF_INDEXED_1_BIT:
+            case ImageMode.CF_INDEXED_2_BIT:
+            case ImageMode.CF_INDEXED_4_BIT:
+            case ImageMode.CF_INDEXED_8_BIT:
+                data_size = count(this.d_out);
+                break;
+            case ImageMode.CF_RAW:
+            case ImageMode.CF_RAW_ALPHA:
+            case ImageMode.CF_RAW_CHROMA:
+                data_size = this.raw_len;
+                break;
+            default:
+                throw new Error("unexpected color format");
+        }
+
         var $c_footer =
         `\n};\n
 const lv_img_dsc_t ${out_name} = {
+  .header.cf = ${header_cf},
   .header.always_zero = 0,
+  .header.reserved = 0,
   .header.w = ${this.w},
-  .header.h = ${this.h},\n`;
-
-    if($cf == ImageMode.CF_TRUE_COLOR) $c_footer += "  .data_size = " + this.w * this.h + " * LV_COLOR_SIZE / 8,\n  .header.cf = LV_IMG_CF_TRUE_COLOR,";
-    else if($cf == ImageMode.CF_TRUE_COLOR_ALPHA) $c_footer += "  .data_size = " + this.w * this.h + " * LV_IMG_PX_SIZE_ALPHA_BYTE,\n  .header.cf = LV_IMG_CF_TRUE_COLOR_ALPHA,";
-    else if($cf == ImageMode.CF_TRUE_COLOR_CHROMA) $c_footer += "  .data_size = " + this.w * this.h + " * LV_COLOR_SIZE / 8,\n  .header.cf = LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED,";
-    else if($cf == ImageMode.CF_ALPHA_1_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_ALPHA_1BIT,";
-    else if($cf == ImageMode.CF_ALPHA_2_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_ALPHA_2BIT,";
-    else if($cf == ImageMode.CF_ALPHA_4_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_ALPHA_4BIT,";
-    else if($cf == ImageMode.CF_ALPHA_8_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_ALPHA_8BIT,";
-    else if($cf == ImageMode.CF_INDEXED_1_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_INDEXED_1BIT,";
-    else if($cf == ImageMode.CF_INDEXED_2_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_INDEXED_2BIT,";
-    else if($cf == ImageMode.CF_INDEXED_4_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_INDEXED_4BIT,";
-    else if($cf == ImageMode.CF_INDEXED_8_BIT) $c_footer += "  .data_size = " + count(this.d_out) + ",\n  .header.cf = LV_IMG_CF_INDEXED_8BIT,";
-    else if($cf == ImageMode.CF_RAW) $c_footer += "  .data_size = " + this.raw_len + ",\n  .header.cf = LV_IMG_CF_RAW,";
-    else if($cf == ImageMode.CF_RAW_ALPHA) $c_footer += "  .data_size = " + this.raw_len + ",\n  .header.cf = LV_IMG_CF_RAW_ALPHA,";
-    else if($cf == ImageMode.CF_RAW_CHROMA) $c_footer += "  .data_size = " + this.raw_len + ",\n  .header.cf = LV_IMG_CF_RAW_CHROMA_KEYED,";
-
-    $c_footer += "\n  .data = " + out_name + `_map,
+  .header.h = ${this.h},
+  .data_size = ${data_size},
+  .data = ${out_name}_map,
 };\n`;
 
         return $c_footer;
