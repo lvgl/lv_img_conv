@@ -71,9 +71,9 @@ async function convertAllImages() {
     }
     for(const imagePath of argv._) {
         console.log("Beginning conversion of " + imagePath);
-        const imageName = argv.i ? argv.i : getFileName(path.basename(imagePath));
+        const imageName = argv.i ? argv.i : getFileName(path.basename(imagePath as string));
         const cFileString = await convert(imagePath, { cf: colorFormat, outputFormat: outputMode, binaryFormat: ImageMode[BINARY_FORMAT_PREFIX + binaryFormat], swapEndian: argv.s, imageName: imageName });
-        const outputPath: string = (argv.o ? argv.o : getCFilePath(imagePath, outputMode)) as any;
+        const outputPath: string = (argv.o ? argv.o : getCFilePath(imageName, outputMode)) as any;
         if(fs.existsSync(outputPath)) {
             if(argv.f) {
                 console.log("overwriting " + outputPath);
