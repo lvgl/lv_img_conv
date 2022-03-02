@@ -7,13 +7,30 @@ How to install:
 1. Clone this repository.
 1. Run `npm install` to install needed dependencies.
 
-Example usage:
+For Windows;
+1. Run 'npm install -g typescript'
+1. Move to 'lib' folder 'cd lib'
+1. Run 'npm install -g ts-node'
 
+Example usage:
+For Linux;
 ```sh
 # C format
 ./lv_img_conv.js logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA
 # Binary format (RGB565)
 ./lv_img_conv.js logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA -t bin --binary-format 565
+# C format with dither algoritm
+./lv_img_conv.js logo_lvgl.png -f -d true -c CF_TRUE_COLOR_ALPHA
+```
+
+For Windows;
+```sh
+# C format
+ts-node cli.ts logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA
+# Binary format (RGB565)
+ts-node cli.ts logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA -t bin --binary-format 565
+# C format with dither algoritm
+ts-node cli.ts logo_lvgl.png -f -d true -c CF_TRUE_COLOR_ALPHA
 ```
 
 A file called `logo_lvgl.c` will be created in the same directory.
