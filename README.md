@@ -1,19 +1,19 @@
 # Image converter for LVGL
 
-How to install:
+## How to install
 
 1. Make sure Node.js is installed.
 1. Not always needed, but recommended: ensure the necessary [native dependencies for canvas](https://github.com/Automattic/node-canvas#compiling) are installed.
 1. Clone this repository.
 1. Run `npm install` to install needed dependencies.
 
-For Windows;
+### Extra steps for Windows
 1. Run 'npm install -g typescript'
 1. Move to 'lib' folder 'cd lib'
 1. Run 'npm install -g ts-node'
 
-Example usage:
-For Linux;
+## Example usage:
+For Linux:
 ```sh
 # C format
 ./lv_img_conv.js logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA
@@ -23,7 +23,7 @@ For Linux;
 ./lv_img_conv.js logo_lvgl.png -f -d true -c CF_TRUE_COLOR_ALPHA
 ```
 
-For Windows;
+For Windows:
 ```sh
 # C format
 ts-node cli.ts logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA
