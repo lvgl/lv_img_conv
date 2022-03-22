@@ -8,12 +8,13 @@ import count from 'locutus/php/array/count';
 import { buildPalette, utils, applyPalette, distance, image } from './image-q/image-q';
 
 interface ConverterOptions {
-    dith: boolean;
+    dith?: boolean;
     cf: ImageMode;
     outputFormat: OutputMode;
     binaryFormat: ImageMode;
     swapEndian: boolean;
     outName: string;
+    useLegacyFooterOrder?: boolean;
 }
 class Converter {
     dith = false;      /*Dithering enable/disable*/
@@ -75,9 +76,11 @@ class Converter {
         if(this.cf == ImageMode.CF_RAW || this.cf == ImageMode.CF_RAW_ALPHA) {
             const d_array = Array.from((this.imageData as Uint8Array));
             this.raw_len = d_array.length;
-            let str = "\n    " + d_array.map((val, i) => "0x" + str_pad(dechex(val), 2, '0', 'STR_PAD_LEFT') + ((i % 13) == 12 ? ", \n    " : ", ")).join("");
+            const indent = this.options.useLegacyFooterOrder ? "  ": "    ";
+            const numValuesPerRow = this.options.useLegacyFooterOrder ? 15 : 12;
+            let str = "\n" + indent + d_array.map((val, i) => "0x" + str_pad(dechex(val), 2, '0', 'STR_PAD_LEFT') + ((i % (numValuesPerRow+1)) == numValuesPerRow ? (", \n" + indent) : ", ")).join("");
             str = str.substr(0, str.length-2);
-            return str + "\n";
+            return str;
         }
         var palette_size = 0, bits_per_value = 0;
         if(this.cf == ImageMode.CF_INDEXED_1_BIT) {
@@ -196,22 +199,25 @@ class Converter {
 
     get_c_header(out_name: string): string {
         var $c_header =
-        `#ifdef LV_LVGL_H_INCLUDE_SIMPLE
+        `#if defined(LV_LVGL_H_INCLUDE_SIMPLE)
 #include "lvgl.h"
 #else
 #include "lvgl/lvgl.h"
 #endif
 
+
 #ifndef LV_ATTRIBUTE_MEM_ALIGN
 #define LV_ATTRIBUTE_MEM_ALIGN
 #endif
+
 `;
         var $attr_name = "LV_ATTRIBUTE_IMG_" + out_name.toUpperCase(); 
         $c_header += 
 `#ifndef ${$attr_name}
 #define ${$attr_name}
 #endif
-const LV_ATTRIBUTE_MEM_ALIGN ${$attr_name} uint8_t ` + out_name+ "_map[] = {";
+
+const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + out_name+ "_map[] = {";
 
         return $c_header;
     }
@@ -271,8 +277,9 @@ const LV_ATTRIBUTE_MEM_ALIGN ${$attr_name} uint8_t ` + out_name+ "_map[] = {";
                 throw new Error("unexpected color format");
         }
 
-        var $c_footer =
-        `\n};\n
+        var $c_footer;
+        if(!this.options.useLegacyFooterOrder) {
+            $c_footer = `\n};\n
 const lv_img_dsc_t ${out_name} = {
   .header.cf = ${header_cf},
   .header.always_zero = 0,
@@ -282,6 +289,18 @@ const lv_img_dsc_t ${out_name} = {
   .data_size = ${data_size},
   .data = ${out_name}_map,
 };\n`;
+        } else {
+            $c_footer = `\n};\n
+const lv_img_dsc_t ${out_name} = {
+  .header.always_zero = 0,
+  .header.w = ${this.w},
+  .header.h = ${this.h},
+  .data_size = ${data_size},
+  .header.cf = ${header_cf},
+  .data = ${out_name}_map,
+};\n`;           
+        }
+
 
         return $c_footer;
     }
@@ -571,14 +590,11 @@ const lv_img_dsc_t ${out_name} = {
             x_end = count(this.d_out);
             i = 1;
         }
-    
-        this.d_out.push(0);
+
         for(var y = 0; y < y_end; y++) {
             c_array += "\n  ";
             for(var x = 0; x < x_end; x++) {
-                if(i >= this.d_out.length) {
-                    console.error("index out of range (" + i + ")");
-                }
+                /* Note: some accesses to d_out may be out of bounds */
                 if(this.cf == ImageMode.ICF_TRUE_COLOR_332) {
                     c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";  i++;
                     if(this.alpha) {
@@ -653,9 +669,13 @@ const lv_img_dsc_t ${out_name} = {
 }
 
 
+export function isNotRaw(options: { cf: ImageMode; }): boolean {
+    return options.cf != ImageMode.CF_RAW && options.cf != ImageMode.CF_RAW_ALPHA; /* && options.cf != ImageMode.CF_RAW_CHROMA; */
+}
+
 async function convertImageBlob(img: Image|Uint8Array, options: Partial<ConverterOptions>): Promise<string|ArrayBuffer> {
     function isImage(img, options): img is Image {
-        return options.cf != ImageMode.CF_RAW && options.cf != ImageMode.CF_RAW_ALPHA && options.cf != ImageMode.CF_RAW_CHROMA;
+        return isNotRaw(options);
     }
     let c_res_array: string;
     let bin_res_blob: ArrayBuffer;
@@ -686,8 +706,6 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
             const binaryConv = new Converter(img.width, img.height, imageData, alpha, options);
             bin_res_blob = await binaryConv.convert() as ArrayBuffer;
         }
-        
-        console.log(`${img.width}x${img.height}`);
     } else {
         c_creator = new Converter(0, 0, img, options.cf == ImageMode.CF_RAW_ALPHA, options);
         if(options.outputFormat == OutputMode.C)
@@ -703,9 +721,9 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
         return c_creator.get_c_header(out_name) + c_res_array + c_creator.get_c_footer(options.cf, out_name);
 }
 
-async function convert(imagePath, options) {
+async function convert(imagePath, options: ConverterOptions) {
     let img: Image|Uint8Array;
-    if(options.cf != ImageMode.CF_RAW && options.cf != ImageMode.CF_RAW_ALPHA && options.cf != ImageMode.CF_RAW_CHROMA)
+    if(isNotRaw(options))
         img = await loadImage(imagePath);
     else {
         eval("var fs = require('fs');");

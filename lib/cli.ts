@@ -18,6 +18,11 @@ const argv = yargs
         type: 'boolean',
         description: 'allow overwriting the output file'
     })
+    .option('image-name', {
+        alias: 'i',
+        type: 'string',
+        description: 'name of image structure'
+    })
     .option('color-format', {
         alias: 'c',
         demandOption: true,
@@ -72,7 +77,7 @@ async function convertAllImages() {
     for(const imagePath of argv._) {
         console.log("Beginning conversion of " + imagePath);
         const imageName = argv.i ? argv.i : getFileName(path.basename(imagePath as string));
-        const cFileString = await convert(imagePath, { cf: colorFormat, outputFormat: outputMode, binaryFormat: ImageMode[BINARY_FORMAT_PREFIX + binaryFormat], swapEndian: argv.s, imageName: imageName });
+        const cFileString = await convert(imagePath, { cf: colorFormat, outputFormat: outputMode, binaryFormat: ImageMode[BINARY_FORMAT_PREFIX + binaryFormat], swapEndian: argv.s as boolean, outName: imageName });
         const outputPath: string = (argv.o ? argv.o : getCFilePath(imageName, outputMode)) as any;
         if(fs.existsSync(outputPath)) {
             if(argv.f) {
