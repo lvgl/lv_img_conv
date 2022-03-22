@@ -1,11 +1,11 @@
 import { createCanvas, loadImage, Image } from 'canvas';
 import path from 'path';
 import { ImageMode, ImageModeUtil, OutputMode } from './enums';
-import round from 'locutus/php/math/round';
 import dechex from 'locutus/php/math/dechex';
 import str_pad from 'locutus/php/strings/str_pad';
 import count from 'locutus/php/array/count';
 import { buildPalette, utils, applyPalette, distance, image } from './image-q/image-q';
+import { round_half_up } from './helpers';
 
 interface ConverterOptions {
     dith?: boolean;
@@ -461,21 +461,21 @@ const lv_img_dsc_t ${out_name} = {
         this.g_nerr = g - this.g_act;
         this.b_nerr = b - this.b_act;
 
-        this.r_nerr = round((7 * this.r_nerr) / 16);
-        this.g_nerr = round((7 * this.g_nerr) / 16);
-        this.b_nerr = round((7 * this.b_nerr) / 16);
+        this.r_nerr = round_half_up((7 * this.r_nerr) / 16);
+        this.g_nerr = round_half_up((7 * this.g_nerr) / 16);
+        this.b_nerr = round_half_up((7 * this.b_nerr) / 16);
 
-        this.r_earr[x] += round((3 * this.r_nerr) / 16);
-        this.g_earr[x] += round((3 * this.g_nerr) / 16);
-        this.b_earr[x] += round((3 * this.b_nerr) / 16);
+        this.r_earr[x] += round_half_up((3 * this.r_nerr) / 16);
+        this.g_earr[x] += round_half_up((3 * this.g_nerr) / 16);
+        this.b_earr[x] += round_half_up((3 * this.b_nerr) / 16);
 
-        this.r_earr[x+1] += round((5 * this.r_nerr) / 16);
-        this.g_earr[x+1] += round((5 * this.g_nerr) / 16);
-        this.b_earr[x+1] += round((5 * this.b_nerr) / 16);
+        this.r_earr[x+1] += round_half_up((5 * this.r_nerr) / 16);
+        this.g_earr[x+1] += round_half_up((5 * this.g_nerr) / 16);
+        this.b_earr[x+1] += round_half_up((5 * this.b_nerr) / 16);
 
-        this.r_earr[x+2] += round(this.r_nerr / 16);
-        this.g_earr[x+2] += round(this.g_nerr / 16);
-        this.b_earr[x+2] += round(this.b_nerr / 16);
+        this.r_earr[x+2] += round_half_up(this.r_nerr / 16);
+        this.g_earr[x+2] += round_half_up(this.g_nerr / 16);
+        this.b_earr[x+2] += round_half_up(this.b_nerr / 16);
       }
       else{
         if(this.cf == ImageMode.ICF_TRUE_COLOR_332) {
@@ -510,7 +510,7 @@ const lv_img_dsc_t ${out_name} = {
 
     classify_pixel(value, bits){
       const tmp = 1 << (8 - bits);
-      let val = round(value / tmp, 0, 'PHP_ROUND_HALF_DOWN') * tmp;
+      let val = Math.round(value / tmp) * tmp;
       if(val < 0) val = 0;
       return val;
     }
