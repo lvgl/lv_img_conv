@@ -45,6 +45,11 @@ const argv = yargs
         type: 'boolean',
         description: 'swap endian of image'
     })
+    .option('dither', {
+        alias: 'd',
+        type: 'boolean',
+        description: 'enable dither'
+    })
     .argv
 
 
@@ -77,7 +82,7 @@ async function convertAllImages() {
     for(const imagePath of argv._) {
         console.log("Beginning conversion of " + imagePath);
         const imageName = argv.i ? argv.i : getFileName(path.basename(imagePath as string));
-        const cFileString = await convert(imagePath, { cf: colorFormat, outputFormat: outputMode, binaryFormat: ImageMode[BINARY_FORMAT_PREFIX + binaryFormat], swapEndian: argv.s as boolean, outName: imageName });
+        const cFileString = await convert(imagePath, { cf: colorFormat, outputFormat: outputMode, binaryFormat: ImageMode[BINARY_FORMAT_PREFIX + binaryFormat], swapEndian: argv.s as boolean, outName: imageName, dith: argv.dither });
         const outputPath: string = (argv.o ? argv.o : getCFilePath(imageName, outputMode)) as any;
         if(fs.existsSync(outputPath)) {
             if(argv.f) {
