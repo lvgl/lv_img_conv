@@ -14,6 +14,7 @@
   ],
   "scripts": {
     "start": "parcel ./web/index.html --open",
+    "test": "jest --verbose",
     "build": "parcel build ./web/index.html ./web/content.html --public-url ./"
   },
   "bin": {
