@@ -222,16 +222,15 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
         return $c_header;
     }
 
-    imagemode_to_enum_name($cf: ImageMode): string {
+    static imagemode_to_enum_name($cf: ImageMode): string {
         switch($cf) {
             case ImageMode.CF_TRUE_COLOR:
             case ImageMode.CF_TRUE_COLOR_ALPHA:
-            case ImageMode.CF_RAW:
             case ImageMode.CF_RAW_ALPHA:
                 return "LV_IMG_" + ImageMode[$cf];
             case ImageMode.CF_TRUE_COLOR_CHROMA:
                 return "LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED";
-            case ImageMode.CF_RAW_CHROMA:
+            case ImageMode.CF_RAW_CHROMA: /* and CF_RAW due to it having the same value */
                 return "LV_IMG_CF_RAW_CHROMA_KEYED";
             case ImageMode.CF_ALPHA_1_BIT:
             case ImageMode.CF_ALPHA_2_BIT:
@@ -249,7 +248,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
 
     get_c_footer($cf, out_name) {
 
-        var header_cf = this.imagemode_to_enum_name($cf);
+        var header_cf = Converter.imagemode_to_enum_name($cf);
         var data_size;
 
         switch($cf) {
@@ -735,4 +734,4 @@ async function convert(imagePath, options: ConverterOptions) {
 }
 
 export default convert;
-export { convertImageBlob };
+export { convertImageBlob, Converter };
