@@ -1,8 +1,9 @@
 enum ImageMode {
-    ICF_TRUE_COLOR_332,      /*Helper formats. Used internally*/
-    ICF_TRUE_COLOR_565,
-    ICF_TRUE_COLOR_565_SWAP,
-    ICF_TRUE_COLOR_888,
+    /*Helper ARGB formats. Used internally*/
+    ICF_TRUE_COLOR_ARGB8332,      
+    ICF_TRUE_COLOR_ARGB8565,
+    ICF_TRUE_COLOR_ARGB8565_RBSWAP,
+    ICF_TRUE_COLOR_ARGB8888,
     CF_ALPHA_1_BIT,
     CF_ALPHA_2_BIT,
     CF_ALPHA_4_BIT,
@@ -15,7 +16,8 @@ enum ImageMode {
     CF_RAW_CHROMA = CF_RAW,
     CF_RAW_ALPHA,
 
-    CF_TRUE_COLOR,          /*Helper formats is C arrays contains all treu color formats (usin in "download")*/
+    /*Helper formats if C arrays contains all true color formats (used in "download")*/
+    CF_TRUE_COLOR,          
     CF_TRUE_COLOR_ALPHA,
     CF_TRUE_COLOR_CHROMA,
 };
