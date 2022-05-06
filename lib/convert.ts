@@ -44,6 +44,9 @@ class Converter {
     g_nerr: number;
     b_nerr: number;
 
+    /* Current pass being made */
+    pass: number;
+
 
     constructor(w: number, h: number, imageData, alpha: boolean, options: Partial<ConverterOptions>) {
         this.dith = options.dith;
@@ -65,11 +68,22 @@ class Converter {
         this.r_nerr = 0;  /*Classification error for next pixel*/
         this.g_nerr = 0;
         this.b_nerr = 0;
+        this.pass = 0;
         this.cf = options.cf;
         this.alpha = alpha;
         this.swapEndian = options.swapEndian;
         this.outputFormat = options.outputFormat;
         this.options = options as ConverterOptions;
+    }
+
+    /**
+     * Get the number of passes being made over an image to output it.
+     */
+    getNumPasses() {
+        if(this.cf == ImageMode.CF_RGB565A8)
+            return 2;
+        else
+            return 1;
     }
 
     async convert(): Promise<string|ArrayBuffer> {
@@ -137,15 +151,18 @@ class Converter {
             oldColorFormat = this.cf;
             this.cf = this.options.binaryFormat;
         }
-        /*Convert all the pixels*/
-        for(var y = 0; y < this.h; y++) {
-            this.dith_reset();
 
-            for(var x = 0; x < this.w; ++x){
-                this.conv_px(x, y);
+        for(this.pass = 0; this.pass < this.getNumPasses(); this.pass++) {
+            /*Convert all the pixels*/
+            for(var y = 0; y < this.h; y++) {
+                this.dith_reset();
+
+                for(var x = 0; x < this.w; ++x){
+                    this.conv_px(x, y);
+                }
             }
         }
-
+        
         if(needsFormatSwap) {
             this.cf = oldColorFormat;
         }

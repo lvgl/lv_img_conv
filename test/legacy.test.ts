@@ -4,16 +4,24 @@ import fs from 'fs';
 import { ImageMode, OutputMode } from "../lib/enums";
 import convert, { convertImageBlob, isNotRaw } from "../lib/convert";
 
-const modes = Object.keys(ImageMode).filter(val => {
-    if(isNaN(Number(val))) {
-        /* It's a string */
-        if(!val.startsWith("ICF_"))
-            return true;
-    }
-    return false;
-})
+const legacyModes: string[] = [
+    "CF_ALPHA_1_BIT",
+    "CF_ALPHA_2_BIT",
+    "CF_ALPHA_4_BIT",
+    "CF_ALPHA_8_BIT",
+    "CF_INDEXED_1_BIT",
+    "CF_INDEXED_2_BIT",
+    "CF_INDEXED_4_BIT",
+    "CF_INDEXED_8_BIT",
+    "CF_RAW",
+    "CF_RAW_CHROMA",
+    "CF_RAW_ALPHA",
+    "CF_TRUE_COLOR",
+    "CF_TRUE_COLOR_ALPHA",
+    "CF_TRUE_COLOR_CHROMA"
+];
 
-test.each(modes)("compare with legacy %s behavior", async(cf) => {
+test.each(legacyModes)("compare with legacy %s behavior", async(cf) => {
     let newFile;
     expect.assertions(1);
     if(isNotRaw({ cf: ImageMode[cf] })) {

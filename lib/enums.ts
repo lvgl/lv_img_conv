@@ -20,6 +20,9 @@ enum ImageMode {
     CF_TRUE_COLOR,          
     CF_TRUE_COLOR_ALPHA,
     CF_TRUE_COLOR_CHROMA,
+
+    /*New formats in v8.3+*/
+    CF_RGB565A8
 };
 
 class ImageModeUtil {
