@@ -244,6 +244,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
             case ImageMode.CF_TRUE_COLOR:
             case ImageMode.CF_TRUE_COLOR_ALPHA:
             case ImageMode.CF_RAW_ALPHA:
+            case ImageMode.CF_RGB565A8:
                 return "LV_IMG_" + ImageMode[$cf];
             case ImageMode.CF_TRUE_COLOR_CHROMA:
                 return "LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED";
@@ -282,6 +283,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
             case ImageMode.CF_INDEXED_2_BIT:
             case ImageMode.CF_INDEXED_4_BIT:
             case ImageMode.CF_INDEXED_8_BIT:
+            case ImageMode.CF_RGB565A8:
                 data_size = count(this.d_out);
                 break;
             case ImageMode.CF_RAW:
@@ -290,7 +292,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
                 data_size = this.raw_len;
                 break;
             default:
-                throw new Error("unexpected color format");
+                throw new Error("unexpected color format " + ImageMode[$cf]);
         }
 
         var $c_footer;
@@ -342,8 +344,14 @@ const lv_img_dsc_t ${out_name} = {
 
         const c = this.imageData[((y*this.w)+x)];
 
-        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888)
+        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565
+            || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP
+            || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332
+            || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888
+            || this.cf == ImageMode.CF_RGB565A8) {
+            /* Populate r_act, g_act, b_act */
             this.dith_next(r, g, b, x);
+        }
 
         if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332) {
             const c8 = (this.r_act) | (this.g_act >> 3) | (this.b_act >> 6);	//RGB332
@@ -364,6 +372,14 @@ const lv_img_dsc_t ${out_name} = {
             array_push(this.d_out, this.g_act);
             array_push(this.d_out, this.r_act);
             array_push(this.d_out, a);
+        } else if(this.cf == ImageMode.CF_RGB565A8) {
+            if(this.pass == 0) {
+                const c16 = ((this.r_act) << 8) | ((this.g_act) << 3) | ((this.b_act) >> 3);	//RGR565
+                array_push(this.d_out, c16 & 0xFF);
+                array_push(this.d_out, (c16 >> 8) & 0xFF);
+            } else if(this.pass == 1) {
+                if(this.alpha) array_push(this.d_out, a);
+            }
         } else if(this.cf == ImageMode.CF_ALPHA_1_BIT) {
             let w = this.w >> 3;
             if(this.w & 0x07) w++;
@@ -605,7 +621,15 @@ const lv_img_dsc_t ${out_name} = {
             y_end = 1;
             x_end = count(this.d_out);
             i = 1;
-        }
+        } else if(this.cf == ImageMode.CF_ALPHA_1_BIT
+            || this.cf == ImageMode.CF_ALPHA_2_BIT
+            || this.cf == ImageMode.CF_ALPHA_4_BIT
+            || this.cf == ImageMode.CF_ALPHA_8_BIT
+            || this.cf == ImageMode.CF_RGB565A8) {
+            /* No special handling required */
+        } else
+            throw new Error("Unhandled color format: " + ImageMode[this.cf]);
+
 
         for(var y = 0; y < y_end; y++) {
             c_array += "\n  ";
@@ -618,7 +642,7 @@ const lv_img_dsc_t ${out_name} = {
                         i++;
                     }
                 }
-                else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP) {
+                else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.CF_RGB565A8) {
                     if(this.swapEndian) {
                         c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', 'STR_PAD_LEFT') + ", ";
                         c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
@@ -627,7 +651,7 @@ const lv_img_dsc_t ${out_name} = {
                         c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', 'STR_PAD_LEFT') + ", ";
                     }
                     i += 2;
-                    if(this.alpha) {
+                    if(this.cf != ImageMode.CF_RGB565A8 && this.alpha) {
                         c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
                         i++;
                     }
@@ -672,7 +696,19 @@ const lv_img_dsc_t ${out_name} = {
                     c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
                     if(i != 0 && ((i % 16) == 0)) c_array += "\n  ";
                     i++;
+                } else
+                    throw new Error("Unhandled color format: " + ImageMode[this.cf]);
+            }
+        }
+
+        if(this.cf == ImageMode.CF_RGB565A8) {
+            c_array += "/*alpha channel*/\n  ";
+            for(var y = 0; y < y_end; y++) {
+                for(var x = 0; x < x_end; x++) {
+                    c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                    i++;
                 }
+                c_array += "\n  ";
             }
         }
     
@@ -704,7 +740,12 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
     
-        const alpha = (options.cf == ImageMode.CF_TRUE_COLOR_ALPHA || options.cf == ImageMode.CF_ALPHA_1_BIT || options.cf == ImageMode.CF_ALPHA_2_BIT || options.cf == ImageMode.CF_ALPHA_4_BIT || options.cf == ImageMode.CF_ALPHA_8_BIT);
+        const alpha = (options.cf == ImageMode.CF_TRUE_COLOR_ALPHA
+            || options.cf == ImageMode.CF_ALPHA_1_BIT
+            || options.cf == ImageMode.CF_ALPHA_2_BIT
+            || options.cf == ImageMode.CF_ALPHA_4_BIT
+            || options.cf == ImageMode.CF_ALPHA_8_BIT
+            || options.cf == ImageMode.CF_RGB565A8);
         c_creator = new Converter(img.width, img.height, imageData, alpha, options);
         
         if(options.outputFormat == OutputMode.C) {
