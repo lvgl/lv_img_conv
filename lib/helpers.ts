@@ -11,3 +11,14 @@ export function round_half_up(n: number): number {
     }
     return Math.round(n);
 }
+
+export function str_pad(str: string, n: number, padding: string, left?: boolean): string {
+    if(left) {
+        return str.padStart(n, padding);
+    } else
+        return str.padEnd(n, padding);
+}
+
+export function dechex(n: number): string {
+    return n.toString(16);
+}

@@ -1,11 +1,8 @@
 import { createCanvas, loadImage, Image } from 'canvas';
 import path from 'path';
 import { ImageMode, ImageModeUtil, OutputMode } from './enums';
-import dechex from 'locutus/php/math/dechex';
-import str_pad from 'locutus/php/strings/str_pad';
-import count from 'locutus/php/array/count';
 import { buildPalette, utils, applyPalette, distance, image } from './image-q/image-q';
-import { round_half_up } from './helpers';
+import { round_half_up, str_pad, dechex } from './helpers';
 
 interface ConverterOptions {
     dith?: boolean;
@@ -92,7 +89,7 @@ class Converter {
             this.raw_len = d_array.length;
             const indent = this.options.useLegacyFooterOrder ? "  ": "    ";
             const numValuesPerRow = this.options.useLegacyFooterOrder ? 15 : 12;
-            let str = "\n" + indent + d_array.map((val, i) => "0x" + str_pad(dechex(val), 2, '0', 'STR_PAD_LEFT') + ((i % (numValuesPerRow+1)) == numValuesPerRow ? (", \n" + indent) : ", ")).join("");
+            let str = "\n" + indent + d_array.map((val, i) => "0x" + str_pad(dechex(val), 2, '0', true) + ((i % (numValuesPerRow+1)) == numValuesPerRow ? (", \n" + indent) : ", ")).join("");
             str = str.substr(0, str.length-2);
             return str;
         }
@@ -284,7 +281,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
             case ImageMode.CF_INDEXED_4_BIT:
             case ImageMode.CF_INDEXED_8_BIT:
             case ImageMode.CF_RGB565A8:
-                data_size = count(this.d_out);
+                data_size = this.d_out.length;
                 break;
             case ImageMode.CF_RAW:
             case ImageMode.CF_RAW_ALPHA:
@@ -572,10 +569,10 @@ const lv_img_dsc_t ${out_name} = {
         } else if(this.cf == ImageMode.CF_INDEXED_1_BIT) {
             c_array += "\n";
             for(var p = 0; p < 2; p ++) {
-                c_array += "  0x" + str_pad(dechex(this.d_out[p * 4 + 0]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                c_array += "  0x" + str_pad(dechex(this.d_out[p * 4 + 0]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', true) + ", ";
                 c_array += `\t/*Color of index ${p}*/\n`;
             }
     
@@ -584,10 +581,10 @@ const lv_img_dsc_t ${out_name} = {
         else if(this.cf == ImageMode.CF_INDEXED_2_BIT) {
             c_array += "\n";
             for(p = 0; p < 4; p ++) {
-                c_array += "  0x" + str_pad(dechex(this.d_out[p * 4 + 0]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                c_array += "  0x" + str_pad(dechex(this.d_out[p * 4 + 0]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', true) + ", ";
                 c_array += `\t/*Color of index ${p}*/\n`;
             }
     
@@ -596,10 +593,10 @@ const lv_img_dsc_t ${out_name} = {
         else if(this.cf == ImageMode.CF_INDEXED_4_BIT) {
             c_array += "\n";
             for(p = 0; p < 16; p ++) {
-                c_array += "  0x" + str_pad(dechex(this.d_out[p * 4 + 0]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                c_array += "  0x" + str_pad(dechex(this.d_out[p * 4 + 0]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', true) + ", ";
                 c_array += `\t/*Color of index ${p}*/\n`;
             }
     
@@ -608,10 +605,10 @@ const lv_img_dsc_t ${out_name} = {
         else if(this.cf == ImageMode.CF_INDEXED_8_BIT) {
             c_array += "\n";
             for(p = 0; p < 256; p ++) {
-                c_array += "  0x" + str_pad(dechex(this.d_out[p * 4 + 0]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                c_array += "  0x" + str_pad(dechex(this.d_out[p * 4 + 0]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 1]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 2]), 2, '0', true) + ", ";
+                c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', true) + ", ";
                 c_array += `\t/*Color of index ${p}*/\n`;
             }
     
@@ -619,7 +616,7 @@ const lv_img_dsc_t ${out_name} = {
         }
         else if(this.cf == ImageMode.CF_RAW_ALPHA || this.cf == ImageMode.CF_RAW_CHROMA) {
             y_end = 1;
-            x_end = count(this.d_out);
+            x_end = this.d_out.length;
             i = 1;
         } else if(this.cf == ImageMode.CF_ALPHA_1_BIT
             || this.cf == ImageMode.CF_ALPHA_2_BIT
@@ -636,64 +633,64 @@ const lv_img_dsc_t ${out_name} = {
             for(var x = 0; x < x_end; x++) {
                 /* Note: some accesses to d_out may be out of bounds */
                 if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332) {
-                    c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";  i++;
+                    c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";  i++;
                     if(this.alpha) {
-                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                         i++;
                     }
                 }
                 else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.CF_RGB565A8) {
                     if(this.swapEndian) {
-                        c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', true) + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                     } else {
-                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                        c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', true) + ", ";
                     }
                     i += 2;
                     if(this.cf != ImageMode.CF_RGB565A8 && this.alpha) {
-                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                         i++;
                     }
                 }
                 else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
                     if(this.swapEndian) {
-                        c_array += "0x" + str_pad(dechex(this.d_out[i+2]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                        c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i+2]), 2, '0', true) + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', true) + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                     } else {
-                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                        c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', 'STR_PAD_LEFT') + ", ";
-                        c_array += "0x" + str_pad(dechex(this.d_out[i+2]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', true) + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i+2]), 2, '0', true) + ", ";
                     }
-                    c_array += "0x" + str_pad(dechex(this.d_out[i+3]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                    c_array += "0x" + str_pad(dechex(this.d_out[i+3]), 2, '0', true) + ", ";
                     
                     i += 4;
                 }
                 else if(this.cf == ImageMode.CF_ALPHA_1_BIT || this.cf == ImageMode.CF_INDEXED_1_BIT) {
                     if((x & 0x7) == 0) {
-                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                         i++;
                     }
                 }
                 else if(this.cf == ImageMode.CF_ALPHA_2_BIT || this.cf == ImageMode.CF_INDEXED_2_BIT) {
                     if((x & 0x3) == 0) {
-                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                         i++;
                     }
                 }
                 else if(this.cf == ImageMode.CF_ALPHA_4_BIT || this.cf == ImageMode.CF_INDEXED_4_BIT) {
                     if((x & 0x1) == 0) {
-                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                        c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                         i++;
                     }
                 }
                 else if(this.cf == ImageMode.CF_ALPHA_8_BIT || this.cf == ImageMode.CF_INDEXED_8_BIT) {
-                    c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                    c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                     i++;
                 }
                 else if(this.cf == ImageMode.CF_RAW_ALPHA || this.cf == ImageMode.CF_RAW_CHROMA) {
-                    c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                    c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                     if(i != 0 && ((i % 16) == 0)) c_array += "\n  ";
                     i++;
                 } else
@@ -705,7 +702,7 @@ const lv_img_dsc_t ${out_name} = {
             c_array += "/*alpha channel*/\n  ";
             for(var y = 0; y < y_end; y++) {
                 for(var x = 0; x < x_end; x++) {
-                    c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', 'STR_PAD_LEFT') + ", ";
+                    c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                     i++;
                 }
                 c_array += "\n  ";
