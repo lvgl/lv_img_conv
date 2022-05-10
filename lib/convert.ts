@@ -699,7 +699,7 @@ const lv_img_dsc_t ${out_name} = {
         }
 
         if(this.cf == ImageMode.CF_RGB565A8) {
-            c_array += "/*alpha channel*/\n  ";
+            c_array += "\n  /*alpha channel*/\n  ";
             for(var y = 0; y < y_end; y++) {
                 for(var x = 0; x < x_end; x++) {
                     c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
