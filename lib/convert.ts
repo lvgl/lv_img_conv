@@ -516,7 +516,7 @@ const lv_img_dsc_t ${out_name} = {
             if(this.g_act > 0xE0) this.g_act = 0xE0;
             if(this.b_act > 0xC0) this.b_act = 0xC0;
 
-        } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP) {
+        } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.CF_RGB565A8) {
             this.r_act = this.classify_pixel(r, 5);
             this.g_act = this.classify_pixel(g, 6);
             this.b_act = this.classify_pixel(b, 5);
