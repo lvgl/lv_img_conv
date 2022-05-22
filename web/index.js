@@ -76,8 +76,13 @@ $("#convert-button").on("click", async() => {
                     outputMode = OutputMode.BIN;
                     const needBinaryFormat = ImageModeUtil.isTrueColor(requestedCf);
                     if(needBinaryFormat) {
-                        const binFormatRequest = BINARY_FORMAT_PREFIX + outputType.substring(4).toUpperCase();
-                        binaryFormat = ImageMode[binFormatRequest];
+                        const binFormatMap = {
+                            "bin_332": ImageMode.ICF_TRUE_COLOR_ARGB8332,
+                            "bin_565": ImageMode.ICF_TRUE_COLOR_ARGB8565,
+                            "bin_565_swap": ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP,
+                            "bin_888": ImageMode.ICF_TRUE_COLOR_ARGB8888
+                        }
+                        binaryFormat = binFormatMap[outputType];
                         if(typeof binaryFormat == 'undefined')
                             throw new Error("Binary format not found: " + binFormatRequest);
                     }
