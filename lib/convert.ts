@@ -257,7 +257,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
             case ImageMode.CF_INDEXED_8_BIT:
                 return "LV_IMG_" + ImageMode[$cf].replace("_BIT", "BIT");
             default:
-                throw new Error("unexpected color format");
+                throw new Error("unexpected color format " + $cf);
         }
     }
 
