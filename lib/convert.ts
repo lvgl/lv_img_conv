@@ -14,7 +14,6 @@ interface ConverterOptions {
     useLegacyFooterOrder?: boolean;
 }
 class Converter {
-    dith = false;      /*Dithering enable/disable*/
     w = 0;         /*Image width*/
     h = 0;         /*Image height*/
     raw_len = 0; /* RAW image data size */
@@ -24,7 +23,6 @@ class Converter {
     chroma = false;    /*Chroma keyed?*/
     d_out: Array<number>;     /*Output data (result)*/
     imageData: Array<number>|Uint8Array; /* Input image data */
-    swapEndian = false; /* Whether to swap endian or not */
     options: ConverterOptions;
 
     /*Helper variables*/
@@ -46,7 +44,6 @@ class Converter {
 
 
     constructor(w: number, h: number, imageData, alpha: boolean, options: Partial<ConverterOptions>) {
-        this.dith = options.dith;
         this.w = w;
         this.h = h;
         this.imageData = imageData;
@@ -54,7 +51,7 @@ class Converter {
         this.g_earr = [];
         this.b_earr = [];
 
-        if(this.dith) {
+        if(options.dith) {
             for(var i = 0; i < this.w + 2; ++i){
                 this.r_earr[i] = 0;
                 this.g_earr[i] = 0;
@@ -68,7 +65,6 @@ class Converter {
         this.pass = 0;
         this.cf = options.cf;
         this.alpha = alpha;
-        this.swapEndian = options.swapEndian;
         this.outputFormat = options.outputFormat;
         this.options = options as ConverterOptions;
     }
@@ -439,7 +435,7 @@ const lv_img_dsc_t ${out_name} = {
 	}
 
     dith_reset() {
-        if(this.dith){
+        if(this.options.dith){
           this.r_nerr = 0;
           this.g_nerr = 0;
           this.b_nerr = 0;
@@ -448,7 +444,7 @@ const lv_img_dsc_t ${out_name} = {
 
     dith_next(r, g, b, x) {
 
-     if(this.dith){
+     if(this.options.dith){
         this.r_act = r + this.r_nerr + this.r_earr[x+1];
         this.r_earr[x+1] = 0;
 
@@ -640,7 +636,7 @@ const lv_img_dsc_t ${out_name} = {
                     }
                 }
                 else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.CF_RGB565A8) {
-                    if(this.swapEndian) {
+                    if(this.options.swapEndian) {
                         c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', true) + ", ";
                         c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                     } else {
@@ -654,7 +650,7 @@ const lv_img_dsc_t ${out_name} = {
                     }
                 }
                 else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
-                    if(this.swapEndian) {
+                    if(this.options.swapEndian) {
                         c_array += "0x" + str_pad(dechex(this.d_out[i+2]), 2, '0', true) + ", ";
                         c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', true) + ", ";
                         c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
