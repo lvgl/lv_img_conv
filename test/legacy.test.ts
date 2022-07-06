@@ -2,7 +2,8 @@
 
 import fs from 'fs';
 import { ImageMode, OutputMode } from "../lib/enums";
-import convert, { convertImageBlob, isNotRaw } from "../lib/convert";
+import { convertImageBlob, isNotRaw } from "../lib/convert";
+import { convert } from '../lib/cli_helpers';
 
 const legacyModes: string[] = [
     "CF_ALPHA_1_BIT",
@@ -22,26 +23,14 @@ const legacyModes: string[] = [
 ];
 
 test.each(legacyModes)("compare with legacy %s behavior", async(cf) => {
-    let newFile;
     expect.assertions(1);
-    if(isNotRaw({ cf: ImageMode[cf] })) {
-        newFile = await convert(__dirname + "/test.png", {
-            binaryFormat: null,
-            outputFormat: OutputMode.C,
-            outName: "test_image", 
-            swapEndian: false,
-            cf: ImageMode[cf],
-            useLegacyFooterOrder: true
-        });
-    } else {
-        newFile = await convertImageBlob(fs.readFileSync(__dirname + "/test.png"), {
-            binaryFormat: null,
-            outputFormat: OutputMode.C,
-            outName: "test_image", 
-            swapEndian: false,
-            cf: ImageMode[cf],
-            useLegacyFooterOrder: false /* different for coverage */
-        });
-    }
+    const newFile = await convert(__dirname + "/test.png", {
+        binaryFormat: null,
+        outputFormat: OutputMode.C,
+        outName: "test_image", 
+        swapEndian: false,
+        cf: ImageMode[cf],
+        useLegacyFooterOrder: isNotRaw({ cf: ImageMode[cf] }) /* different for coverage */
+    });
     expect(newFile).toMatchSnapshot();
 });
