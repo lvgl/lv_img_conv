@@ -44,7 +44,7 @@ function FileName({ name, upsert, index, filename }) {
         type="text"
         name={"name" + index}
         value={name}
-        placeholder={`image name ${index+1} (default "${filename}")`}
+        placeholder={filename}
     />;
 }
 
