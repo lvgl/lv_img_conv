@@ -1,10 +1,9 @@
-import { createCanvas, loadImage, Image } from 'canvas';
-import path from 'path';
+import { createCanvas, Image } from 'canvas';
 import { ImageMode, ImageModeUtil, OutputMode } from './enums';
 import { buildPalette, utils, applyPalette, distance, image } from './image-q/image-q';
 import { round_half_up, str_pad, dechex } from './helpers';
 
-interface ConverterOptions {
+export interface ConverterOptions {
     dith?: boolean;
     cf: ImageMode;
     outputFormat: OutputMode;
@@ -12,6 +11,9 @@ interface ConverterOptions {
     swapEndian: boolean;
     outName: string;
     useLegacyFooterOrder?: boolean;
+    use565A8alpha?: boolean;
+    overrideWidth?: number;
+    overrideHeight?: number;
 }
 class Converter {
     w = 0;         /*Image width*/
@@ -757,7 +759,7 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
             bin_res_blob = await binaryConv.convert() as ArrayBuffer;
         }
     } else {
-        c_creator = new Converter(0, 0, img, options.cf == ImageMode.CF_RAW_ALPHA, options);
+        c_creator = new Converter(options.overrideWidth ?? 0, options.overrideHeight ?? 0, img, options.cf == ImageMode.CF_RAW_ALPHA, options);
         if(options.outputFormat == OutputMode.C)
             c_res_array = await c_creator.convert() as string;
         else
@@ -771,18 +773,4 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
         return c_creator.get_c_header(out_name) + c_res_array + c_creator.get_c_footer(options.cf, out_name);
 }
 
-async function convert(imagePath, options: ConverterOptions) {
-    let img: Image|Uint8Array;
-    if(isNotRaw(options))
-        img = await loadImage(imagePath);
-    else {
-        eval("var fs = require('fs');");
-        /** @ts-ignore */
-        img = fs.readFileSync(imagePath);
-    }
-    return convertImageBlob(img, Object.assign({}, options, { outName: options.outName || path.parse(imagePath).name }));
-    
-}
-
-export default convert;
 export { convertImageBlob, Converter };
