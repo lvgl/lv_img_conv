@@ -120,6 +120,15 @@ function ExtraOptions({ canChangeEndian, dither, setDither, bigEndian, setBigEnd
     </RowWithLabel>;
 }
 
+function tryParsingImageData(url: string): Promise<{w:number;h:number;}|null> {
+    return new Promise(resolve => {
+        const image = new Image();
+        image.onload = () => resolve({ w: image.width, h: image.height });
+        image.onerror = () => resolve(null);
+        image.src = url;
+    });
+}
+
 function App() {
     const [ fileList, setFileList ] = useState<File[]>([]);
     const [ colorFormat, setColorFormat ] = useState<ImageMode>(ImageMode.CF_TRUE_COLOR);
@@ -159,14 +168,22 @@ function App() {
                                     throw new Error("Binary format not found: " + outputType);
                             }
                         }
-                        async function doConvert(blob) {
+                        async function doConvert(blob, overrideWidth?: number, overrideHeight?: number) {
                             let imageName: string = names.state[i];
                             if (imageName == "") {
                                 imageName = file.name.split('.')[0];
                             }
         
                             const swapEndian = outputMode == OutputMode.C && bigEndian.state;
-                            const imageString = await convertImageBlob(blob, { cf: requestedCf, outName: imageName, swapEndian: swapEndian, outputFormat: outputMode, binaryFormat });
+                            const imageString = await convertImageBlob(blob, {
+                                cf: requestedCf,
+                                outName: imageName,
+                                swapEndian: swapEndian,
+                                outputFormat: outputMode,
+                                binaryFormat,
+                                overrideWidth,
+                                overrideHeight
+                            });
                             console.log(imageString);
                             const newBlob = new Blob([ imageString ], {
                                 type: outputMode == OutputMode.BIN ? "binary/octet-stream" : "text/x-c;charset=utf-8"
@@ -176,10 +193,12 @@ function App() {
                         }
                         if(ImageMode[colorFormat].startsWith("CF_RAW")) {
                             reader.readAsArrayBuffer(file);
-                            reader.onload = function(e) {
+                            reader.onload = async function(e) {
                                 console.log("loaded");
                                 const buf = e.target.result as ArrayBuffer;
-                                doConvert(new Uint8Array(buf));
+                                const blobUrl = URL.createObjectURL(new Blob([buf]));
+                                const overrideInfo = await tryParsingImageData(blobUrl);
+                                doConvert(new Uint8Array(buf), overrideInfo?.w, overrideInfo?.h);
                             }
                         } else {
                             reader.onload = function(e) {
