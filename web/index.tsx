@@ -30,24 +30,29 @@ function FileInputRow({ setFileList, numFiles }) {
     </RowWithLabel>;
 }
 
-function FileName({ name, upsert, index }) {
+function getDefaultFilename(filename) {
+    return filename.split('.')[0];
+}
+
+function FileName({ name, upsert, index, filename }) {
     const onChange = useCallback((e) => {
         upsert(e.target.value, index);
     }, [ upsert, index ]);
     return <Form.Control
         onChange={onChange}
+        className="mb-2"
         type="text"
         name={"name" + index}
         value={name}
-        placeholder={`Variable name of image ${index+1}`}
+        placeholder={`image name ${index+1} (default "${filename}")`}
     />;
 }
 
-function FileNames({ names, upsert }) {
+function FileNames({ names, upsert, fileList }) {
     if(names.length == 0)
         return null;
     return <RowWithLabel labelText="File name(s)" labelFor="name0">
-        {names.map((name, i) => <FileName index={i} key={i} name={name} upsert={upsert}/>)}
+        {names.map((name, i) => <FileName index={i} key={i} name={name} filename={getDefaultFilename(fileList[i].name)} upsert={upsert}/>)}
     </RowWithLabel>;
 }
 
@@ -171,7 +176,7 @@ function App() {
                         async function doConvert(blob, overrideWidth?: number, overrideHeight?: number) {
                             let imageName: string = names.state[i];
                             if (imageName == "") {
-                                imageName = file.name.split('.')[0];
+                                imageName = getDefaultFilename(file.name);
                             }
         
                             const swapEndian = outputMode == OutputMode.C && bigEndian.state;
@@ -220,12 +225,17 @@ function App() {
             }
             setIsConverting(false);
         };
-        performConversion();
+        performConversion().catch(e => {
+            console.error(e);
+            window.alert("An error occured while converting, check the console for details");
+            setIsConverting(false);
+        });
+        
     }, [ dither.state, bigEndian.state, setIsConverting, fileList, names, colorFormat, outputFormat ]);
     return <Col md={{ span: 9 }}>
         <Form encType="multipart/form-data" name="img_conv">
             <FileInputRow setFileList={setFileList} numFiles={fileList.length}/>
-            <FileNames names={names.state} upsert={names.upsertAt}/>
+            <FileNames fileList={fileList} names={names.state} upsert={names.upsertAt}/>
             <ColorFormat colorFormat={colorFormat} setColorFormat={setColorFormat}/>
             <OutputFormat colorFormat={colorFormat} outputFormat={outputFormat} setOutputFormat={setOutputFormat}/>
             <ExtraOptions canChangeEndian={outputFormat == "c_array"} dither={dither.state} setDither={dither.setState} bigEndian={bigEndian.state} setBigEndian={bigEndian.setState}/>
