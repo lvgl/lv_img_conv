@@ -223,4 +223,5 @@ $(document).ready(function () {
 });
 
 /* FIXME: temporary hack to fix setImmediate issue */
+/* @ts-ignore */
 window.setImmediate = (fn) => setTimeout(fn, 0);
