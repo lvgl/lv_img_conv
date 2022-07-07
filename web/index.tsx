@@ -38,7 +38,7 @@ function FileName({ name, upsert, index, filename }) {
     const onChange = useCallback((e) => {
         upsert(e.target.value, index);
     }, [ upsert, index ]);
-    return <Form.Control
+    return <input
         onChange={onChange}
         className="mb-2"
         type="text"
