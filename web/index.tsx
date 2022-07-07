@@ -142,7 +142,7 @@ function App() {
     const dither = useBooleanState(false);
     const bigEndian = useBooleanState(false);
     useEffect(() => {
-        names.setState(fileList.map(file => ""));
+        names.setState(fileList.map(file => getDefaultFilename(file.name)));
     }, [ fileList ]);
     const [ isConverting, setIsConverting ] = useState(false);
     const doConvert = useCallback(() => {
