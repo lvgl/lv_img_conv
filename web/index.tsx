@@ -40,7 +40,7 @@ function FileName({ name, upsert, index, filename }) {
     }, [ upsert, index ]);
     return <Form.Control
         onChange={onChange}
-        className="mb-2"
+        className="mb-2 custom-auto-height"
         type="text"
         name={"name" + index}
         value={name}
@@ -69,7 +69,7 @@ function ColorFormat({ colorFormat, setColorFormat }) {
         setColorFormat(parseInt(e.target.value));
     }, []);
     return <RowWithLabel labelText="Color format" labelFor="cf">
-        <Form.Control as="select" name="cf" value={colorFormat} onChange={onChange}>
+        <Form.Control as="select" name="cf" value={colorFormat} onChange={onChange} className="custom-auto-height">
             <ColorFormatOptions/>
         </Form.Control>
         <p className="text-mute">
@@ -88,7 +88,7 @@ function OutputFormat({ colorFormat, outputFormat, setOutputFormat }) {
         colorFormat == ImageMode.CF_TRUE_COLOR_CHROMA ||
         colorFormat == ImageMode.CF_RGB565A8);
     return <RowWithLabel labelText="Output format" labelFor="format">
-        <Form.Control as="select" name="format" value={outputFormat} onChange={onChange}>
+        <Form.Control as="select" name="format" value={outputFormat} onChange={onChange} className="custom-auto-height">
             <option value="c_array">C array</option>
             {!isTrueColor && <option value="bin">Binary</option>}
             {isTrueColor && <>
