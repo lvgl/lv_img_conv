@@ -69,9 +69,9 @@ function ColorFormat({ colorFormat, setColorFormat }) {
         setColorFormat(parseInt(e.target.value));
     }, []);
     return <RowWithLabel labelText="Color format" labelFor="cf">
-        <select name="cf" value={colorFormat} onChange={onChange}>
+        <Form.Control as="select" name="cf" value={colorFormat} onChange={onChange}>
             <ColorFormatOptions/>
-        </select>
+        </Form.Control>
         <p className="text-mute">
             <strong>Alpha byte</strong> Add a 8 bit Alpha value to every pixel<br/>
             <strong>Chroma keyed</strong> Make LV_COLOR_TRANSP (lv_conf.h) pixels to transparent
@@ -88,7 +88,7 @@ function OutputFormat({ colorFormat, outputFormat, setOutputFormat }) {
         colorFormat == ImageMode.CF_TRUE_COLOR_CHROMA ||
         colorFormat == ImageMode.CF_RGB565A8);
     return <RowWithLabel labelText="Output format" labelFor="format">
-        <select name="format" value={outputFormat} onChange={onChange}>
+        <Form.Control as="select" name="format" value={outputFormat} onChange={onChange}>
             <option value="c_array">C array</option>
             {!isTrueColor && <option value="bin">Binary</option>}
             {isTrueColor && <>
@@ -97,7 +97,7 @@ function OutputFormat({ colorFormat, outputFormat, setOutputFormat }) {
                 <option value="bin_565_swap">Binary RGB565 Swap</option>
                 <option value="bin_888">Binary RGB888</option>
             </>}
-        </select>
+        </Form.Control>
     </RowWithLabel>;
 }
 
