@@ -14,6 +14,7 @@ export interface ConverterOptions {
     use565A8alpha?: boolean;
     overrideWidth?: number;
     overrideHeight?: number;
+    includePath? : string;
 }
 class Converter {
     w = 0;         /*Image width*/
@@ -214,7 +215,7 @@ class Converter {
         `#if defined(LV_LVGL_H_INCLUDE_SIMPLE)
 #include "lvgl.h"
 #else
-#include "lvgl/lvgl.h"
+#include  "${this.options.includePath || 'lvgl/lvgl.h'}"
 #endif
 
 

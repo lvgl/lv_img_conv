@@ -50,6 +50,11 @@ const argv = yargs
         type: 'boolean',
         description: 'enable dither'
     })
+    .option('lv-include', {        
+        alias: 'l',
+        type: 'string',
+        description: 'set alternative include path'
+    })
     .argv
 
 
@@ -83,7 +88,7 @@ async function convertAllImages() {
     for(const imagePath of argv._) {
         console.log("Beginning conversion of " + imagePath);
         const imageName = argv.i ? argv.i : getFileName(path.basename(imagePath as string));
-        const cFileString = await convert(imagePath, { cf: colorFormat, outputFormat: outputMode, binaryFormat: ImageMode[BINARY_FORMAT_PREFIX + binaryFormat], swapEndian: argv.s as boolean, outName: imageName, dith: argv.dither });
+        const cFileString = await convert(imagePath, { cf: colorFormat, outputFormat: outputMode, binaryFormat: ImageMode[BINARY_FORMAT_PREFIX + binaryFormat], swapEndian: argv.s as boolean, outName: imageName, dith: argv.dither,includePath:argv["lv-include"] });
         const outputPath: string = (argv.o ? argv.o : getCFilePath(imageName, outputMode)) as any;
         if(fs.existsSync(outputPath)) {
             if(argv.f) {

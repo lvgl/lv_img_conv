@@ -31,6 +31,8 @@ ts-node cli.ts logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA
 ts-node cli.ts logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA -t bin --binary-format 565
 # C format with dither algoritm
 ts-node cli.ts logo_lvgl.png -f -d true -c CF_TRUE_COLOR_ALPHA
+# C format with custom lvgl include path
+ts-node cli.ts logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA --lv-include ../lvgl/lvgl.h
 ```
 
 A file called `logo_lvgl.c` will be created in the same directory.
