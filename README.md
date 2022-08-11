@@ -21,6 +21,8 @@ For Linux:
 ./lv_img_conv.js logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA -t bin --binary-format 565
 # C format with dither algoritm
 ./lv_img_conv.js logo_lvgl.png -f -d true -c CF_TRUE_COLOR_ALPHA
+# C format with custom lvgl include path
+./lv_img_conv.js logo_lvgl.png -f -c CF_TRUE_COLOR_ALPHA --lv-include ../lvgl/lvgl.h
 ```
 
 For Windows:
