@@ -12,6 +12,8 @@
 1. Move to 'lib' folder 'cd lib'
 1. Run 'npm install -g ts-node'
 
+**Note**: The converter might fail on Windows if the file path containes multiple byte characters (Chinese/Japanese/Korean characters etc.). It's recommended to rename these files before passing them to the converter, or you can switch on `enable Beta:Use Unicode UTF-8 for worldwide language support` options.
+
 ## Example usage:
 For Linux:
 ```sh
