@@ -10,5 +10,5 @@ VOLUME /usr/src/proj
 
 WORKDIR /usr/src/proj
 
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["entrypoint.sh"]
 
