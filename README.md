@@ -7,6 +7,8 @@
 1. Clone this repository.
 1. Run `npm install` to install needed dependencies.
 
+**NOTE: For Docker instructions skip ahead**
+
 ### Extra steps for Windows
 1. Run 'npm install -g typescript'
 1. Move to 'lib' folder 'cd lib'
@@ -36,6 +38,42 @@ ts-node cli.ts logo_lvgl.png -f -d true -c CF_TRUE_COLOR_ALPHA
 ```
 
 A file called `logo_lvgl.c` will be created in the same directory.
+
+## Example usage with Docker:
+
+### Building locally
+
+```bash
+docker build -t lv_img_conv .
+```
+
+### Run lv_img_conv.js directly
+
+```bash
+docker run --rm \
+    -u 1000:1000 \
+    -v /path/to/project:/usr/src/proj \
+    lv_img_conv \
+    <lv_img_conv.js arguments>
+```
+
+### Run interactive shell
+
+```bash
+docker run -it --rm \
+    -u 1000:1000 \
+    -v /path/to/project:/usr/src/proj \
+    lv_img_conv
+```
+
+`lv_img_conv.js` is in the `$PATH` and callable from the interactive shell.
+
+### Parameters
+
+| Parameter | Function |
+| --- | --- |
+| `-u 1000:1000` | Set to your host user's UID/GID, unless you don't mind root ownership on output files |
+| `-v /path/to/project:/usr/src/proj` | Path to directory with image(s) to convert |
 
 ## Attribution
 
