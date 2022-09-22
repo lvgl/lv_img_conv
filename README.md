@@ -73,7 +73,7 @@ docker run -it --rm \
 | Parameter | Function |
 | --- | --- |
 | `-u 1000:1000` | Set to your host user's UID/GID, unless you don't mind root ownership on output files |
-| `-v /path/to/project:/usr/src/proj` | Path to directory with image(s) to convert |
+| `-v /path/to/project:/usr/src/proj` | Change `/path/to/project` to directory with image(s) to convert |
 
 ## Attribution
 
