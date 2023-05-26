@@ -139,7 +139,7 @@ class Converter {
             });
         }
 
-        
+
         let oldColorFormat;
         const needsFormatSwap = this.outputFormat == OutputMode.BIN && ImageModeUtil.isTrueColor(this.cf);
         if(needsFormatSwap) {
@@ -157,7 +157,7 @@ class Converter {
                 }
             }
         }
-        
+
         if(needsFormatSwap) {
             this.cf = oldColorFormat;
         }
@@ -167,6 +167,8 @@ class Converter {
         else {
             var $content = this.d_out;
             var $cf = this.cf;
+            // FIXME
+            throw new Error("Binary format not updated for LVGL 9 yet");
             var $lv_cf = 4;               /*Color format in LittlevGL*/
             switch($cf) {
                 case ImageMode.CF_TRUE_COLOR:
@@ -183,12 +185,6 @@ class Converter {
                     $lv_cf = 9; break;
                 case ImageMode.CF_INDEXED_8_BIT:
                     $lv_cf = 10; break;
-                case ImageMode.CF_ALPHA_1_BIT:
-                    $lv_cf = 11; break;
-                case ImageMode.CF_ALPHA_2_BIT:
-                    $lv_cf = 12; break;
-                case ImageMode.CF_ALPHA_4_BIT:
-                    $lv_cf = 13; break;
                 case ImageMode.CF_ALPHA_8_BIT:
                     $lv_cf = 14; break;
             }
@@ -203,7 +199,7 @@ class Converter {
 
             for(var i = 0; i < this.d_out.length; i++) {
                 finalBinary[i+4] = this.d_out[i];
-                
+
             }
             return finalBinary.buffer;
         }
@@ -231,8 +227,8 @@ class Converter {
 #endif
 
 `;
-        var $attr_name = "LV_ATTRIBUTE_IMG_" + out_name.toUpperCase(); 
-        $c_header += 
+        var $attr_name = "LV_ATTRIBUTE_IMG_" + out_name.toUpperCase();
+        $c_header +=
 `#ifndef ${$attr_name}
 #define ${$attr_name}
 #endif
@@ -253,9 +249,6 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
                 return "LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED";
             case ImageMode.CF_RAW_CHROMA: /* and CF_RAW due to it having the same value */
                 return "LV_IMG_CF_RAW_CHROMA_KEYED";
-            case ImageMode.CF_ALPHA_1_BIT:
-            case ImageMode.CF_ALPHA_2_BIT:
-            case ImageMode.CF_ALPHA_4_BIT:
             case ImageMode.CF_ALPHA_8_BIT:
             case ImageMode.CF_INDEXED_1_BIT:
             case ImageMode.CF_INDEXED_2_BIT:
@@ -278,9 +271,6 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
             case ImageMode.CF_TRUE_COLOR_CHROMA:
                 data_size = this.w * this.h + " * " + ($cf == ImageMode.CF_TRUE_COLOR_ALPHA ? "LV_IMG_PX_SIZE_ALPHA_BYTE" : "LV_COLOR_SIZE / 8");
                 break;
-            case ImageMode.CF_ALPHA_1_BIT:
-            case ImageMode.CF_ALPHA_2_BIT:
-            case ImageMode.CF_ALPHA_4_BIT:
             case ImageMode.CF_ALPHA_8_BIT:
             case ImageMode.CF_INDEXED_1_BIT:
             case ImageMode.CF_INDEXED_2_BIT:
@@ -319,7 +309,7 @@ const lv_img_dsc_t ${out_name} = {
   .data_size = ${data_size},
   .header.cf = ${header_cf},
   .data = ${out_name}_map,
-};\n`;           
+};\n`;
         }
 
 
@@ -383,34 +373,7 @@ const lv_img_dsc_t ${out_name} = {
             } else if(this.pass == 1) {
                 if(this.alpha) array_push(this.d_out, a);
             }
-        } else if(this.cf == ImageMode.CF_ALPHA_1_BIT) {
-            let w = this.w >> 3;
-            if(this.w & 0x07) w++;
-            const p = w * y + (x >> 3);
-            if(!isset(this.d_out[p])) {
-                this.d_out[p] = 0;          /*Clear the bits first*/
-            }
-            if(a > 0x80) {
-                this.d_out[p] |= 1 << (7 - (x & 0x7));
-            }
-        }
-        else if(this.cf == ImageMode.CF_ALPHA_2_BIT) {
-            let w = this.w >> 2;
-            if(this.w & 0x03) w++;
-
-            const p = w * y + (x >> 2);
-            if(!isset(this.d_out[p])) this.d_out[p] = 0;          /*Clear the bits first*/
-            this.d_out[p] |= (a >> 6) << (6 - ((x & 0x3) * 2));
-        }
-        else if(this.cf == ImageMode.CF_ALPHA_4_BIT) {
-            let w = this.w >> 1;
-            if(this.w & 0x01) w++;
-
-            const p = w * y + (x >> 1);
-            if(!isset(this.d_out[p])) this.d_out[p] = 0;          /*Clear the bits first*/
-            this.d_out[p] |= (a >> 4) << (4 - ((x & 0x1) * 4));
-        }
-        else if(this.cf == ImageMode.CF_ALPHA_8_BIT) {
+        } else if(this.cf == ImageMode.CF_ALPHA_8_BIT) {
             const p = this.w * y + x;
             this.d_out[p] = a;
         }
@@ -550,7 +513,7 @@ const lv_img_dsc_t ${out_name} = {
       return val;
     }
     format_to_c_array() {
-        
+
         let c_array = "";
         var i = 0;
         let y_end = this.h;
@@ -581,7 +544,7 @@ const lv_img_dsc_t ${out_name} = {
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', true) + ", ";
                 c_array += `\t/*Color of index ${p}*/\n`;
             }
-    
+
             i = p * 4;
         }
         else if(this.cf == ImageMode.CF_INDEXED_2_BIT) {
@@ -593,7 +556,7 @@ const lv_img_dsc_t ${out_name} = {
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', true) + ", ";
                 c_array += `\t/*Color of index ${p}*/\n`;
             }
-    
+
             i = p * 4;
         }
         else if(this.cf == ImageMode.CF_INDEXED_4_BIT) {
@@ -605,7 +568,7 @@ const lv_img_dsc_t ${out_name} = {
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', true) + ", ";
                 c_array += `\t/*Color of index ${p}*/\n`;
             }
-    
+
             i = p * 4;
         }
         else if(this.cf == ImageMode.CF_INDEXED_8_BIT) {
@@ -617,17 +580,14 @@ const lv_img_dsc_t ${out_name} = {
                 c_array += "0x" + str_pad(dechex(this.d_out[p * 4 + 3]), 2, '0', true) + ", ";
                 c_array += `\t/*Color of index ${p}*/\n`;
             }
-    
+
             i = p * 4;
         }
         else if(this.cf == ImageMode.CF_RAW_ALPHA || this.cf == ImageMode.CF_RAW_CHROMA) {
             y_end = 1;
             x_end = this.d_out.length;
             i = 1;
-        } else if(this.cf == ImageMode.CF_ALPHA_1_BIT
-            || this.cf == ImageMode.CF_ALPHA_2_BIT
-            || this.cf == ImageMode.CF_ALPHA_4_BIT
-            || this.cf == ImageMode.CF_ALPHA_8_BIT
+        } else if(this.cf == ImageMode.CF_ALPHA_8_BIT
             || this.cf == ImageMode.CF_RGB565A8) {
             /* No special handling required */
         } else
@@ -670,22 +630,22 @@ const lv_img_dsc_t ${out_name} = {
                         c_array += "0x" + str_pad(dechex(this.d_out[i+2]), 2, '0', true) + ", ";
                     }
                     c_array += "0x" + str_pad(dechex(this.d_out[i+3]), 2, '0', true) + ", ";
-                    
+
                     i += 4;
                 }
-                else if(this.cf == ImageMode.CF_ALPHA_1_BIT || this.cf == ImageMode.CF_INDEXED_1_BIT) {
+                else if(this.cf == ImageMode.CF_INDEXED_1_BIT) {
                     if((x & 0x7) == 0) {
                         c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                         i++;
                     }
                 }
-                else if(this.cf == ImageMode.CF_ALPHA_2_BIT || this.cf == ImageMode.CF_INDEXED_2_BIT) {
+                else if(this.cf == ImageMode.CF_INDEXED_2_BIT) {
                     if((x & 0x3) == 0) {
                         c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                         i++;
                     }
                 }
-                else if(this.cf == ImageMode.CF_ALPHA_4_BIT || this.cf == ImageMode.CF_INDEXED_4_BIT) {
+                else if(this.cf == ImageMode.CF_INDEXED_4_BIT) {
                     if((x & 0x1) == 0) {
                         c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
                         i++;
@@ -714,12 +674,12 @@ const lv_img_dsc_t ${out_name} = {
                 c_array += "\n  ";
             }
         }
-    
+
         if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
             c_array += "\n#endif";
         }
         return c_array;
-    
+
     }
 }
 
@@ -742,15 +702,12 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
-    
+
         const alpha = (options.cf == ImageMode.CF_TRUE_COLOR_ALPHA
-            || options.cf == ImageMode.CF_ALPHA_1_BIT
-            || options.cf == ImageMode.CF_ALPHA_2_BIT
-            || options.cf == ImageMode.CF_ALPHA_4_BIT
             || options.cf == ImageMode.CF_ALPHA_8_BIT
             || options.cf == ImageMode.CF_RGB565A8);
         c_creator = new Converter(img.width, img.height, imageData, alpha, options);
-        
+
         if(options.outputFormat == OutputMode.C) {
             if(options.cf == ImageMode.CF_TRUE_COLOR || options.cf == ImageMode.CF_TRUE_COLOR_ALPHA || options.cf == ImageMode.CF_TRUE_COLOR_CHROMA) {
                 const arrayList = await Promise.all([
@@ -773,8 +730,8 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
         else
             bin_res_blob = await c_creator.convert() as ArrayBuffer;
     }
-    
-    
+
+
     if(outputFormat == OutputMode.BIN)
         return bin_res_blob;
     else

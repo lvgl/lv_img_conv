@@ -6,9 +6,6 @@ import { convertImageBlob, isNotRaw } from "../lib/convert";
 import { convert } from '../lib/cli_helpers';
 
 const legacyModes: string[] = [
-    "CF_ALPHA_1_BIT",
-    "CF_ALPHA_2_BIT",
-    "CF_ALPHA_4_BIT",
     "CF_ALPHA_8_BIT",
     "CF_INDEXED_1_BIT",
     "CF_INDEXED_2_BIT",
@@ -27,7 +24,7 @@ test.each(legacyModes)("compare with legacy %s behavior", async(cf) => {
     const newFile = await convert(__dirname + "/test.png", {
         binaryFormat: null,
         outputFormat: OutputMode.C,
-        outName: "test_image", 
+        outName: "test_image",
         swapEndian: false,
         cf: ImageMode[cf],
         useLegacyFooterOrder: isNotRaw({ cf: ImageMode[cf] }) /* different for coverage */
