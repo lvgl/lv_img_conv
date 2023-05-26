@@ -241,20 +241,27 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
     static imagemode_to_enum_name($cf: ImageMode): string {
         switch($cf) {
             case ImageMode.CF_TRUE_COLOR:
+                return "LV_COLOR_FORMAT_NATIVE";
             case ImageMode.CF_TRUE_COLOR_ALPHA:
+                return "LV_COLOR_FORMAT_NATIVE_WITH_ALPHA";
             case ImageMode.CF_RAW_ALPHA:
+                return "LV_COLOR_FORMAT_RAW_ALPHA";
             case ImageMode.CF_RGB565A8:
-                return "LV_IMG_" + ImageMode[$cf];
+                return "LV_COLOR_FORMAT_RGB565A8";
             case ImageMode.CF_TRUE_COLOR_CHROMA:
-                return "LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED";
+                return "LV_COLOR_FORMAT_NATIVE";
             case ImageMode.CF_RAW_CHROMA: /* and CF_RAW due to it having the same value */
-                return "LV_IMG_CF_RAW_CHROMA_KEYED";
+                return "LV_COLOR_FORMAT_RAW";
             case ImageMode.CF_ALPHA_8_BIT:
+                return "LV_COLOR_FORMAT_A8";
             case ImageMode.CF_INDEXED_1_BIT:
+                return "LV_COLOR_FORMAT_I1";
             case ImageMode.CF_INDEXED_2_BIT:
+                return "LV_COLOR_FORMAT_I2";
             case ImageMode.CF_INDEXED_4_BIT:
+                return "LV_COLOR_FORMAT_I4";
             case ImageMode.CF_INDEXED_8_BIT:
-                return "LV_IMG_" + ImageMode[$cf].replace("_BIT", "BIT");
+                return "LV_COLOR_FORMAT_I8";
             default:
                 throw new Error("unexpected color format " + $cf);
         }
