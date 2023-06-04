@@ -346,15 +346,17 @@ const lv_img_dsc_t ${out_name} = {
 
         if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565
             || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP
-            || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332
+            || this.cf == ImageMode.ICF_AL88
             || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888
             || this.cf == ImageMode.CF_RGB565A8) {
             /* Populate r_act, g_act, b_act */
             this.dith_next(r, g, b, x);
         }
 
-        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332) {
-            const c8 = (this.r_act) | (this.g_act >> 3) | (this.b_act >> 6);	//RGB332
+        if(this.cf == ImageMode.ICF_AL88) {
+            // calculate brightness
+            const brightness = 0.2126 * (this.r_act/255) + 0.7152 * (this.g_act/255) + 0.0722 * (this.b_act/255);
+            const c8 = Math.min(Math.max(Math.round(brightness * 255), 0), 255);
             array_push(this.d_out, c8);
             if(this.alpha) array_push(this.d_out, a);
         } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565) {
@@ -434,16 +436,7 @@ const lv_img_dsc_t ${out_name} = {
         this.b_act = b + this.b_nerr + this.b_earr[x+1];
         this.b_earr[x+1] = 0;
 
-        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332) {
-            this.r_act = this.classify_pixel(this.r_act, 3);
-            this.g_act = this.classify_pixel(this.g_act, 3);
-            this.b_act = this.classify_pixel(this.b_act, 2);
-
-            if(this.r_act > 0xE0) this.r_act = 0xE0;
-            if(this.g_act > 0xE0) this.g_act = 0xE0;
-            if(this.b_act > 0xC0) this.b_act = 0xC0;
-
-        } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP) {
+        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP) {
             this.r_act = this.classify_pixel(this.r_act, 5);
             this.g_act = this.classify_pixel(this.g_act, 6);
             this.b_act = this.classify_pixel(this.b_act, 5);
@@ -452,7 +445,7 @@ const lv_img_dsc_t ${out_name} = {
             if(this.g_act > 0xFC) this.g_act = 0xFC;
             if(this.b_act > 0xF8) this.b_act = 0xF8;
 
-        } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
+        } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888 || this.cf == ImageMode.ICF_AL88) {
             this.r_act = this.classify_pixel(this.r_act, 8);
             this.g_act = this.classify_pixel(this.g_act, 8);
             this.b_act = this.classify_pixel(this.b_act, 8);
@@ -483,16 +476,7 @@ const lv_img_dsc_t ${out_name} = {
         this.b_earr[x+2] += round_half_up(this.b_nerr / 16);
       }
       else{
-        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332) {
-            this.r_act = this.classify_pixel(r, 3);
-            this.g_act = this.classify_pixel(g, 3);
-            this.b_act = this.classify_pixel(b, 2);
-
-            if(this.r_act > 0xE0) this.r_act = 0xE0;
-            if(this.g_act > 0xE0) this.g_act = 0xE0;
-            if(this.b_act > 0xC0) this.b_act = 0xC0;
-
-        } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.CF_RGB565A8) {
+        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.CF_RGB565A8) {
             this.r_act = this.classify_pixel(r, 5);
             this.g_act = this.classify_pixel(g, 6);
             this.b_act = this.classify_pixel(b, 5);
@@ -501,7 +485,7 @@ const lv_img_dsc_t ${out_name} = {
             if(this.g_act > 0xFC) this.g_act = 0xFC;
             if(this.b_act > 0xF8) this.b_act = 0xF8;
 
-        } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
+        } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888 || this.cf == ImageMode.ICF_AL88) {
             this.r_act = this.classify_pixel(r, 8);
             this.g_act = this.classify_pixel(g, 8);
             this.b_act = this.classify_pixel(b, 8);
@@ -526,10 +510,10 @@ const lv_img_dsc_t ${out_name} = {
         let y_end = this.h;
         let x_end = this.w;
 
-        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332) {
+        if(this.cf == ImageMode.ICF_AL88) {
             c_array += "\n#if LV_COLOR_DEPTH == 1 || LV_COLOR_DEPTH == 8";
-            if(!this.alpha) c_array += "\n  /*Pixel format: Red: 3 bit, Green: 3 bit, Blue: 2 bit*/";
-            else  c_array += "\n  /*Pixel format: Alpha 8 bit, Red: 3 bit, Green: 3 bit, Blue: 2 bit*/";
+            if(!this.alpha) c_array += "\n  /*Pixel format: Brightness 8 bit*/";
+            else  c_array += "\n  /*Pixel format: Alpha 8 bit, Brightness 8 bit */";
         } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565) {
             c_array += "\n#if LV_COLOR_DEPTH == 16 && LV_COLOR_16_SWAP == 0";
             if(!this.alpha) c_array += "\n  /*Pixel format: Red: 5 bit, Green: 6 bit, Blue: 5 bit*/";
@@ -605,7 +589,7 @@ const lv_img_dsc_t ${out_name} = {
             c_array += "\n  ";
             for(var x = 0; x < x_end; x++) {
                 /* Note: some accesses to d_out may be out of bounds */
-                if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332) {
+                if(this.cf == ImageMode.ICF_AL88) {
                     c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";  i++;
                     if(this.alpha) {
                         c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
@@ -682,7 +666,7 @@ const lv_img_dsc_t ${out_name} = {
             }
         }
 
-        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8332 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
+        if(this.cf == ImageMode.ICF_AL88 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
             c_array += "\n#endif";
         }
         return c_array;
@@ -718,7 +702,7 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
         if(options.outputFormat == OutputMode.C) {
             if(options.cf == ImageMode.CF_TRUE_COLOR || options.cf == ImageMode.CF_TRUE_COLOR_ALPHA || options.cf == ImageMode.CF_TRUE_COLOR_CHROMA) {
                 const arrayList = await Promise.all([
-                    ImageMode.ICF_TRUE_COLOR_ARGB8332,
+                    ImageMode.ICF_AL88,
                     ImageMode.ICF_TRUE_COLOR_ARGB8565,
                     ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP,
                     ImageMode.ICF_TRUE_COLOR_ARGB8888

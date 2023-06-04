@@ -92,7 +92,7 @@ function OutputFormat({ colorFormat, outputFormat, setOutputFormat }) {
             <option value="c_array">C array</option>
             {!isTrueColor && <option value="bin">Binary</option>}
             {isTrueColor && <>
-                <option value="bin_332">Binary RGB332</option>
+                <option value="bin_l8">Binary L8</option>
                 <option value="bin_565">Binary RGB565</option>
                 <option value="bin_565_swap">Binary RGB565 Swap</option>
                 <option value="bin_888">Binary RGB888</option>
@@ -105,7 +105,7 @@ function ExtraOptions({ canChangeEndian, dither, setDither, bigEndian, setBigEnd
     const onDitherChange = useCallback(e => setDither(e.target.checked), [ setDither ]);
     const onEndianChange = useCallback(e => setBigEndian(e.target.checked), [ setBigEndian ]);
     return <RowWithLabel labelFor={undefined} labelText="Options">
-        <Form.Check 
+        <Form.Check
             custom
             value={dither}
             onChange={onDitherChange}
@@ -113,7 +113,7 @@ function ExtraOptions({ canChangeEndian, dither, setDither, bigEndian, setBigEnd
             id={"dith-checkbox"}
             label="Dither images (can improve quality)"
         />
-        <Form.Check 
+        <Form.Check
             custom
             disabled={!canChangeEndian}
             value={bigEndian}
@@ -163,7 +163,7 @@ function App() {
                             const needBinaryFormat = ImageModeUtil.isTrueColor(requestedCf);
                             if(needBinaryFormat) {
                                 const binFormatMap = {
-                                    "bin_332": ImageMode.ICF_TRUE_COLOR_ARGB8332,
+                                    "bin_l8": ImageMode.ICF_AL88,
                                     "bin_565": ImageMode.ICF_TRUE_COLOR_ARGB8565,
                                     "bin_565_swap": ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP,
                                     "bin_888": ImageMode.ICF_TRUE_COLOR_ARGB8888
@@ -178,7 +178,7 @@ function App() {
                             if (imageName == "") {
                                 imageName = getDefaultFilename(file.name);
                             }
-        
+
                             const swapEndian = outputMode == OutputMode.C && bigEndian.state;
                             const imageString = await convertImageBlob(blob, {
                                 cf: requestedCf,
@@ -212,7 +212,7 @@ function App() {
                                     console.log("loaded");
                                     doConvert(image);
                                 };
-        
+
                                 image.onerror = function(e) {
                                     reject(e);
                                 };
@@ -230,7 +230,7 @@ function App() {
             window.alert("An error occured while converting, check the console for details");
             setIsConverting(false);
         });
-        
+
     }, [ dither.state, bigEndian.state, setIsConverting, fileList, names, colorFormat, outputFormat ]);
     return <Col md={{ span: 9 }}>
         <Form encType="multipart/form-data" name="img_conv">
