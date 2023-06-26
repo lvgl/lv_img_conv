@@ -2,7 +2,6 @@ enum ImageMode {
     /*Helper ARGB formats. Used internally*/
     ICF_AL88,
     ICF_TRUE_COLOR_ARGB8565,
-    ICF_TRUE_COLOR_ARGB8565_RBSWAP,
     ICF_TRUE_COLOR_ARGB8888,
     CF_ALPHA_8_BIT,
     CF_INDEXED_1_BIT,

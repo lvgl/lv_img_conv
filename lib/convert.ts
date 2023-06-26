@@ -345,7 +345,6 @@ const lv_img_dsc_t ${out_name} = {
         const c = this.imageData[((y*this.w)+x)];
 
         if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565
-            || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP
             || this.cf == ImageMode.ICF_AL88
             || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888
             || this.cf == ImageMode.CF_RGB565A8) {
@@ -363,11 +362,6 @@ const lv_img_dsc_t ${out_name} = {
             const c16 = ((this.r_act) << 8) | ((this.g_act) << 3) | ((this.b_act) >> 3);	//RGR565
             array_push(this.d_out, c16 & 0xFF);
             array_push(this.d_out, (c16 >> 8) & 0xFF);
-            if(this.alpha) array_push(this.d_out, a);
-        } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP) {
-            const c16 = ((this.r_act) << 8) | ((this.g_act) << 3) | ((this.b_act) >> 3);	//RGR565
-            array_push(this.d_out, (c16 >> 8) & 0xFF);
-            array_push(this.d_out, c16 & 0xFF);
             if(this.alpha) array_push(this.d_out, a);
         } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
             array_push(this.d_out, this.b_act);
@@ -436,7 +430,7 @@ const lv_img_dsc_t ${out_name} = {
         this.b_act = b + this.b_nerr + this.b_earr[x+1];
         this.b_earr[x+1] = 0;
 
-        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP) {
+        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565) {
             this.r_act = this.classify_pixel(this.r_act, 5);
             this.g_act = this.classify_pixel(this.g_act, 6);
             this.b_act = this.classify_pixel(this.b_act, 5);
@@ -476,7 +470,7 @@ const lv_img_dsc_t ${out_name} = {
         this.b_earr[x+2] += round_half_up(this.b_nerr / 16);
       }
       else{
-        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.CF_RGB565A8) {
+        if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.CF_RGB565A8) {
             this.r_act = this.classify_pixel(r, 5);
             this.g_act = this.classify_pixel(g, 6);
             this.b_act = this.classify_pixel(b, 5);
@@ -515,14 +509,10 @@ const lv_img_dsc_t ${out_name} = {
             if(!this.alpha) c_array += "\n  /*Pixel format: Brightness 8 bit*/";
             else  c_array += "\n  /*Pixel format: Alpha 8 bit, Brightness 8 bit */";
         } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565) {
-            c_array += "\n#if LV_COLOR_DEPTH == 16 && LV_COLOR_16_SWAP == 0";
+            c_array += "\n#if LV_COLOR_DEPTH == 16";
             if(!this.alpha) c_array += "\n  /*Pixel format: Red: 5 bit, Green: 6 bit, Blue: 5 bit*/";
             else c_array += "\n  /*Pixel format: Alpha 8 bit, Red: 5 bit, Green: 6 bit, Blue: 5 bit*/";
-        }  else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP) {
-            c_array += "\n#if LV_COLOR_DEPTH == 16 && LV_COLOR_16_SWAP != 0";
-            if(!this.alpha) c_array +=  "\n  /*Pixel format: Red: 5 bit, Green: 6 bit, Blue: 5 bit BUT the 2 bytes are swapped*/";
-            else c_array += "\n  /*Pixel format: Alpha 8 bit, Red: 5 bit, Green: 6 bit, Blue: 5 bit  BUT the 2  color bytes are swapped*/";
-        }  else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
+        } else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
             c_array += "\n#if LV_COLOR_DEPTH == 32";
             if(!this.alpha) c_array += "\n  /*Pixel format: Fix 0xFF: 8 bit, Red: 8 bit, Green: 8 bit, Blue: 8 bit*/";
             else "\n  /*Pixel format: Alpha 8 bit, Red: 8 bit, Green: 8 bit, Blue: 8 bit*/";
@@ -596,7 +586,7 @@ const lv_img_dsc_t ${out_name} = {
                         i++;
                     }
                 }
-                else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.CF_RGB565A8) {
+                else if(this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.CF_RGB565A8) {
                     if(this.options.swapEndian) {
                         c_array += "0x" + str_pad(dechex(this.d_out[i+1]), 2, '0', true) + ", ";
                         c_array += "0x" + str_pad(dechex(this.d_out[i]), 2, '0', true) + ", ";
@@ -666,7 +656,7 @@ const lv_img_dsc_t ${out_name} = {
             }
         }
 
-        if(this.cf == ImageMode.ICF_AL88 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
+        if(this.cf == ImageMode.ICF_AL88 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8565 || this.cf == ImageMode.ICF_TRUE_COLOR_ARGB8888) {
             c_array += "\n#endif";
         }
         return c_array;
@@ -704,7 +694,6 @@ async function convertImageBlob(img: Image|Uint8Array, options: Partial<Converte
                 const arrayList = await Promise.all([
                     ImageMode.ICF_AL88,
                     ImageMode.ICF_TRUE_COLOR_ARGB8565,
-                    ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP,
                     ImageMode.ICF_TRUE_COLOR_ARGB8888
                 ].map(cf => new Converter(img.width, img.height, imageData, alpha, Object.assign({}, options, { cf })).convert())) as string[];
                 c_res_array = arrayList.join("");
