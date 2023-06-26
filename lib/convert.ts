@@ -243,7 +243,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
             case ImageMode.CF_TRUE_COLOR:
                 return "LV_COLOR_FORMAT_NATIVE";
             case ImageMode.CF_TRUE_COLOR_ALPHA:
-                return "LV_COLOR_FORMAT_NATIVE_WITH_ALPHA";
+                return "LV_COLOR_FORMAT_NATIVE_ALPHA";
             case ImageMode.CF_RAW_ALPHA:
                 return "LV_COLOR_FORMAT_RAW_ALPHA";
             case ImageMode.CF_RGB565A8:
@@ -276,7 +276,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST ${$attr_name} uint8_t ` + 
             case ImageMode.CF_TRUE_COLOR:
             case ImageMode.CF_TRUE_COLOR_ALPHA:
             case ImageMode.CF_TRUE_COLOR_CHROMA:
-                data_size = this.w * this.h + " * " + ($cf == ImageMode.CF_TRUE_COLOR_ALPHA ? "LV_IMG_PX_SIZE_ALPHA_BYTE" : "LV_COLOR_SIZE / 8");
+                data_size = this.w * this.h + " * " + ($cf == ImageMode.CF_TRUE_COLOR_ALPHA ? "LV_COLOR_FORMAT_NATIVE_ALPHA_SIZE" : "LV_COLOR_SIZE / 8");
                 break;
             case ImageMode.CF_ALPHA_8_BIT:
             case ImageMode.CF_INDEXED_1_BIT:
