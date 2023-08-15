@@ -3,6 +3,7 @@
 ## How to install
 
 1. Make sure Node.js is installed.
+1. On Linux make sure the followings are installed: `sudo apt install gcc make g++ pkg-config libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg8-dev libgif-dev`
 1. Not always needed, but recommended: ensure the necessary [native dependencies for canvas](https://github.com/Automattic/node-canvas#compiling) are installed.
 1. Clone this repository.
 1. Run `npm install` to install needed dependencies.
