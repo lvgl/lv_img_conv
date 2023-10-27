@@ -223,8 +223,8 @@ class Converter {
 #if defined(LV_LVGL_H_INCLUDE_SIMPLE)
     #include "lvgl.h"
 #else
-
-#include  "${this.options.includePath || 'lvgl/lvgl.h'}"
+    #include  "${this.options.includePath || 'lvgl/lvgl.h'}"	
+#endif
 
 #ifndef LV_ATTRIBUTE_MEM_ALIGN
 #define LV_ATTRIBUTE_MEM_ALIGN
