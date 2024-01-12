@@ -1,6 +1,6 @@
 import bsCustomFileInput from 'bs-custom-file-input';
 import { convertImageBlob } from '../lib/convert';
-import { ImageMode, ImageModeUtil, OutputMode } from '../lib/enums';
+import { ImageMode, ImageModeUtil } from '../lib/enums';
 import { saveAs } from 'file-saver';
 import { useArrayState, useBooleanState } from 'react-use-object-state';
 import { createRoot } from 'react-dom/client';
@@ -72,32 +72,6 @@ function ColorFormat({ colorFormat, setColorFormat }) {
         <Form.Control as="select" name="cf" value={colorFormat} onChange={onChange} className="custom-auto-height">
             <ColorFormatOptions/>
         </Form.Control>
-        <p className="text-mute">
-            <strong>Alpha byte</strong> Add a 8 bit Alpha value to every pixel<br/>
-            <strong>Chroma keyed</strong> Make LV_COLOR_TRANSP (lv_conf.h) pixels to transparent
-        </p>
-    </RowWithLabel>;
-}
-
-function OutputFormat({ colorFormat, outputFormat, setOutputFormat }) {
-    const onChange = useCallback((e) => {
-        setOutputFormat(e.target.value);
-    }, []);
-    const isTrueColor = (colorFormat == ImageMode.CF_TRUE_COLOR_ALPHA ||
-        colorFormat == ImageMode.CF_TRUE_COLOR ||
-        colorFormat == ImageMode.CF_TRUE_COLOR_CHROMA ||
-        colorFormat == ImageMode.CF_RGB565A8);
-    return <RowWithLabel labelText="Output format" labelFor="format">
-        <Form.Control as="select" name="format" value={outputFormat} onChange={onChange} className="custom-auto-height">
-            <option value="c_array">C array</option>
-            {!isTrueColor && <option value="bin">Binary</option>}
-            {isTrueColor && <>
-                <option value="bin_332">Binary RGB332</option>
-                <option value="bin_565">Binary RGB565</option>
-                <option value="bin_565_swap">Binary RGB565 Swap</option>
-                <option value="bin_888">Binary RGB888</option>
-            </>}
-        </Form.Control>
     </RowWithLabel>;
 }
 
@@ -136,8 +110,7 @@ function tryParsingImageData(url: string): Promise<{w:number;h:number;}|null> {
 
 function App() {
     const [ fileList, setFileList ] = useState<File[]>([]);
-    const [ colorFormat, setColorFormat ] = useState<ImageMode>(ImageMode.CF_TRUE_COLOR);
-    const [ outputFormat, setOutputFormat ] = useState("c_array");
+    const [ colorFormat, setColorFormat ] = useState<ImageMode>(ImageMode.RGB565);
     const names = useArrayState([]);
     const dither = useBooleanState(false);
     const bigEndian = useBooleanState(false);
@@ -153,50 +126,26 @@ function App() {
                 if(file) {
                     const reader = new FileReader();
                     await new Promise<void>((resolve, reject) => {
-                        const outputType = outputFormat;
-                        let outputMode, binaryFormat;
                         const requestedCf = colorFormat;
-                        if(outputType == "c_array")
-                            outputMode = OutputMode.C;
-                        else {
-                            outputMode = OutputMode.BIN;
-                            const needBinaryFormat = ImageModeUtil.isTrueColor(requestedCf);
-                            if(needBinaryFormat) {
-                                const binFormatMap = {
-                                    "bin_332": ImageMode.ICF_TRUE_COLOR_ARGB8332,
-                                    "bin_565": ImageMode.ICF_TRUE_COLOR_ARGB8565,
-                                    "bin_565_swap": ImageMode.ICF_TRUE_COLOR_ARGB8565_RBSWAP,
-                                    "bin_888": ImageMode.ICF_TRUE_COLOR_ARGB8888
-                                }
-                                binaryFormat = binFormatMap[outputType];
-                                if(typeof binaryFormat == 'undefined')
-                                    throw new Error("Binary format not found: " + outputType);
-                            }
-                        }
                         async function doConvert(blob, overrideWidth?: number, overrideHeight?: number) {
                             let imageName: string = names.state[i];
                             if (imageName == "") {
                                 imageName = getDefaultFilename(file.name);
                             }
         
-                            const swapEndian = outputMode == OutputMode.C && bigEndian.state;
+                            const swapEndian = false;
                             const imageString = await convertImageBlob(blob, {
                                 cf: requestedCf,
                                 outName: imageName,
-                                swapEndian: swapEndian,
-                                outputFormat: outputMode,
-                                binaryFormat,
-                                overrideWidth,
-                                overrideHeight
                             });
                             console.log(imageString);
                             const newBlob = new Blob([ imageString ], {
-                                type: outputMode == OutputMode.BIN ? "binary/octet-stream" : "text/x-c;charset=utf-8"
+                                type: "text/x-c;charset=utf-8"
                             });
-                            saveAs(newBlob, imageName + "." + (outputMode == OutputMode.BIN ? "bin" : "c"));
+                            saveAs(newBlob, imageName + ".c");
                             resolve();
                         }
-                        if(ImageMode[colorFormat].startsWith("CF_RAW")) {
+                        if(ImageMode[colorFormat].startsWith("RAW")) {
                             reader.readAsArrayBuffer(file);
                             reader.onload = async function(e) {
                                 console.log("loaded");
@@ -231,14 +180,12 @@ function App() {
             setIsConverting(false);
         });
         
-    }, [ dither.state, bigEndian.state, setIsConverting, fileList, names, colorFormat, outputFormat ]);
+    }, [ dither.state, bigEndian.state, setIsConverting, fileList, names, colorFormat ]);
     return <Col md={{ span: 9 }}>
         <Form encType="multipart/form-data" name="img_conv">
             <FileInputRow setFileList={setFileList} numFiles={fileList.length}/>
             <FileNames fileList={fileList} names={names.state} upsert={names.upsertAt}/>
             <ColorFormat colorFormat={colorFormat} setColorFormat={setColorFormat}/>
-            <OutputFormat colorFormat={colorFormat} outputFormat={outputFormat} setOutputFormat={setOutputFormat}/>
-            <ExtraOptions canChangeEndian={outputFormat == "c_array"} dither={dither.state} setDither={dither.setState} bigEndian={bigEndian.state} setBigEndian={bigEndian.setState}/>
             <Form.Group>
                 <Button disabled={isConverting} onClick={doConvert} variant="primary" as="input" type="button" value="Convert" name="submit" id="convert-button"/>
             </Form.Group>
